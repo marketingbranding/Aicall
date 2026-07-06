@@ -51,7 +51,7 @@ Hostinger note 2026-07-06: Current Hostinger PHP documentation shows PHP 8.3 as 
 - [x] Implement password-reset flow.
 - [x] Create branches table/model.
 - [x] Add user branch relationship.
-- [ ] Add initial roles `SUPER_ADMIN` and `SALES`.
+- [x] Add initial roles `SUPER_ADMIN` and `SALES`.
 - [x] Add account statuses.
 - [ ] Implement Policies/Gates/authorization services.
 - [ ] Seed/create first Super Admin using secure documented procedure.
@@ -68,6 +68,8 @@ Verification note 2026-07-06: Registration now uses Nama Lengkap, Email, Passwor
 Verification note 2026-07-06: Existing Breeze forgot-password/password-reset flow was audited against product requirements. It uses email-based reset links, Laravel's `password_reset_tokens` broker with 60-minute expiry, and hashed password updates. User-facing reset views and password broker status messages were localized to simple Bahasa Indonesia. `php artisan test` passed 33 tests / 90 assertions, and `npm run build` passed.
 
 Verification note 2026-07-06: Added `branches` table/model with unique code, name, active flag, timestamps, factory support, nullable `users.branch_id`, and User/Branch relationships. Local migration applied successfully. `php artisan test` passed 37 tests / 97 assertions, and `npm run build` passed.
+
+Verification note 2026-07-06: Added centralized `UserRole` enum for `SUPER_ADMIN` and `SALES`, `users.role` with default `SALES`, User role helpers, HQ access helper, registration default role, and Super Admin factory/dev creation path. Local migration applied successfully. `php artisan test` passed 41 tests / 109 assertions, and `npm run build` passed.
 
 - [x] pending user cannot train
 - [x] suspended user cannot train

@@ -2,6 +2,7 @@
 
 namespace Database\Factories;
 
+use App\Enums\UserRole;
 use App\Models\Branch;
 use App\Models\User;
 use Illuminate\Database\Eloquent\Factories\Factory;
@@ -30,9 +31,32 @@ class UserFactory extends Factory
             'email' => fake()->unique()->safeEmail(),
             'email_verified_at' => now(),
             'password' => static::$password ??= Hash::make('password'),
+            'role' => UserRole::Sales,
             'status' => User::STATUS_ACTIVE,
             'remember_token' => Str::random(10),
         ];
+    }
+
+    /**
+     * Indicate that the user is a Super Admin.
+     */
+    public function superAdmin(): static
+    {
+        return $this->state(fn (array $attributes) => [
+            'branch_id' => null,
+            'role' => UserRole::SuperAdmin,
+            'status' => User::STATUS_ACTIVE,
+        ]);
+    }
+
+    /**
+     * Indicate that the user is a Sales user.
+     */
+    public function sales(): static
+    {
+        return $this->state(fn (array $attributes) => [
+            'role' => UserRole::Sales,
+        ]);
     }
 
     /**

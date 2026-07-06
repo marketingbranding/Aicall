@@ -2,6 +2,7 @@
 
 namespace Tests\Feature\Auth;
 
+use App\Enums\UserRole;
 use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Tests\TestCase;
@@ -51,6 +52,21 @@ class RegistrationTest extends TestCase
         $this->assertDatabaseHas('users', [
             'email' => 'pending@example.com',
             'status' => User::STATUS_PENDING_APPROVAL,
+        ]);
+    }
+
+    public function test_new_registered_users_are_sales(): void
+    {
+        $this->post('/register', [
+            'name' => 'Siti Aminah',
+            'email' => 'sales@example.com',
+            'password' => 'password',
+            'password_confirmation' => 'password',
+        ]);
+
+        $this->assertDatabaseHas('users', [
+            'email' => 'sales@example.com',
+            'role' => UserRole::Sales->value,
         ]);
     }
 }
