@@ -49,6 +49,21 @@ Route::middleware(['auth', 'hq'])->prefix('hq')->name('hq.')->group(function () 
         ->name('personas.archive');
     Route::post('/personas/{persona}/duplicate', [\App\Http\Controllers\Hq\PersonaController::class, 'duplicate'])
         ->name('personas.duplicate');
+
+    Route::get('/scenarios', [\App\Http\Controllers\Hq\ScenarioController::class, 'index'])
+        ->name('scenarios.index');
+    Route::get('/scenarios/create', [\App\Http\Controllers\Hq\ScenarioController::class, 'create'])
+        ->name('scenarios.create');
+    Route::post('/scenarios', [\App\Http\Controllers\Hq\ScenarioController::class, 'store'])
+        ->name('scenarios.store');
+    Route::get('/scenarios/{scenario}/edit', [\App\Http\Controllers\Hq\ScenarioController::class, 'edit'])
+        ->name('scenarios.edit');
+    Route::put('/scenarios/{scenario}', [\App\Http\Controllers\Hq\ScenarioController::class, 'update'])
+        ->name('scenarios.update');
+    Route::post('/scenarios/{scenario}/archive', [\App\Http\Controllers\Hq\ScenarioController::class, 'archive'])
+        ->name('scenarios.archive');
+    Route::post('/scenarios/{scenario}/duplicate', [\App\Http\Controllers\Hq\ScenarioController::class, 'duplicate'])
+        ->name('scenarios.duplicate');
 });
 
 Route::get('/_test/hq-ping', function () {

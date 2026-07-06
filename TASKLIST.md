@@ -120,14 +120,14 @@ Verification note 2026-07-06: Implemented Persona Hidden Information as a dedica
 
 ## Phase 3 — Scenario and Rubric Domain
 
-- [ ] Create scenario/versioning models.
-- [ ] Implement Scenario Builder.
-- [ ] Implement first-speaker configuration.
-- [ ] Implement allowed Persona Selection Modes.
-- [ ] Implement scenario-persona assignments.
-- [ ] Implement difficulty levels and Custom modifiers.
-- [ ] Enforce max roleplay duration <= 900 seconds.
-- [ ] Implement `allow_ai_end_call`.
+- [x] Create scenario/versioning models.
+- [x] Implement Scenario Builder.
+- [x] Implement first-speaker configuration.
+- [x] Implement allowed Persona Selection Modes.
+- [x] Implement scenario-persona assignments.
+- [x] Implement difficulty levels and Custom modifiers.
+- [x] Enforce max roleplay duration <= 900 seconds.
+- [x] Implement `allow_ai_end_call`.
 - [ ] Implement Global Rubric management.
 - [ ] Implement Scenario Rubric management.
 - [ ] Implement Scenario global-rubric weight overrides.
@@ -135,11 +135,13 @@ Verification note 2026-07-06: Implemented Persona Hidden Information as a dedica
 
 ### Phase 3 Tests
 
-- [ ] mode restrictions
-- [ ] persona assignment restrictions
-- [ ] max duration validation
+- [x] mode restrictions
+- [x] persona assignment restrictions
+- [x] max duration validation
 - [ ] rubric merge
 - [ ] rubric weight override
+
+Verification note 2026-07-06: Created `scenarios`, `scenario_versions`, and `scenario_personas` tables. Implemented full Scenario aggregate with immutable ScenarioVersion versioning. Added Scenario Builder UI with 8 sections (Deskripsi & Briefing, Konteks Tersembunyi, Konfigurasi Percakapan, Target & Kondisi, Kondisi Sukses & Gagal, Tingkat Kesulitan dengan CUSTOM modifiers, Mode Pemilihan Persona, Persona yang Tersedia). Enforced max_duration_seconds <= 900 via FormRequest validation. Added `allow_ai_end_call` checkbox. All 209 tests pass / 575 assertions, and `npm run build` passes. Stopping before Rubric implementation as instructed.
 
 ---
 
