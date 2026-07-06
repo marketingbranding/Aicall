@@ -132,13 +132,15 @@ Fields:
 - `id`
 - `persona_version_id`
 - `key`
-- `information`
-- `sensitivity`
-- `disclosure_difficulty`
-- `relevant_topics_json`
-- `direct_question_effectiveness`
-- `trust_requirement`
-- `disclosure_conditions_json`
+- `title`
+- `information` nullable
+- `sensitivity` default 50
+- `disclosure_difficulty` default 50
+- `relevant_topics_json` nullable
+- `direct_question_effectiveness` default 50
+- `trust_requirement` default 50
+- `disclosure_conditions_json` nullable
+- `is_active` default true
 - timestamps
 
 Unique:
