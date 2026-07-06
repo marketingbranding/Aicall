@@ -4,6 +4,7 @@ namespace App\Http\Controllers\Hq;
 
 use App\Http\Controllers\Controller;
 use App\Models\Persona;
+use App\Models\PersonaHiddenInformation;
 use App\Models\PersonaObjection;
 use App\Models\PersonaVersion;
 use Illuminate\Http\RedirectResponse;
@@ -79,6 +80,15 @@ class PersonaController extends Controller
             'objections.*.severity' => ['nullable', 'integer', 'in:0,25,50,75,100'],
             'objections.*.emotional_importance' => ['nullable', 'integer', 'in:0,25,50,75,100'],
             'objections.*.persistence' => ['nullable', 'integer', 'in:0,25,50,75,100'],
+
+            'hidden_information' => ['nullable', 'array', 'max:10'],
+            'hidden_information.*.key' => ['nullable', 'string', 'max:255'],
+            'hidden_information.*.title' => ['nullable', 'string', 'max:255'],
+            'hidden_information.*.information' => ['nullable', 'string', 'max:65535'],
+            'hidden_information.*.sensitivity' => ['nullable', 'integer', 'in:0,25,50,75,100'],
+            'hidden_information.*.disclosure_difficulty' => ['nullable', 'integer', 'in:0,25,50,75,100'],
+            'hidden_information.*.direct_question_effectiveness' => ['nullable', 'integer', 'in:0,25,50,75,100'],
+            'hidden_information.*.trust_requirement' => ['nullable', 'integer', 'in:0,25,50,75,100'],
         ]);
 
         $persona = Persona::create([
@@ -106,6 +116,7 @@ class PersonaController extends Controller
         ]);
 
         $this->syncObjections($request, $version);
+        $this->syncHiddenInformation($request, $version);
 
         $persona->update(['current_version_id' => $version->id]);
 
@@ -117,7 +128,7 @@ class PersonaController extends Controller
     {
         $this->authorize('update', $persona);
 
-        $persona->load('currentVersion.objections');
+        $persona->load('currentVersion.objections', 'currentVersion.hiddenInformation');
 
         return view('hq.personas.edit', compact('persona'));
     }
@@ -171,6 +182,15 @@ class PersonaController extends Controller
             'objections.*.severity' => ['nullable', 'integer', 'in:0,25,50,75,100'],
             'objections.*.emotional_importance' => ['nullable', 'integer', 'in:0,25,50,75,100'],
             'objections.*.persistence' => ['nullable', 'integer', 'in:0,25,50,75,100'],
+
+            'hidden_information' => ['nullable', 'array', 'max:10'],
+            'hidden_information.*.key' => ['nullable', 'string', 'max:255'],
+            'hidden_information.*.title' => ['nullable', 'string', 'max:255'],
+            'hidden_information.*.information' => ['nullable', 'string', 'max:65535'],
+            'hidden_information.*.sensitivity' => ['nullable', 'integer', 'in:0,25,50,75,100'],
+            'hidden_information.*.disclosure_difficulty' => ['nullable', 'integer', 'in:0,25,50,75,100'],
+            'hidden_information.*.direct_question_effectiveness' => ['nullable', 'integer', 'in:0,25,50,75,100'],
+            'hidden_information.*.trust_requirement' => ['nullable', 'integer', 'in:0,25,50,75,100'],
         ]);
 
         $persona->update([
@@ -199,6 +219,7 @@ class PersonaController extends Controller
         ]);
 
         $this->syncObjections($request, $version);
+        $this->syncHiddenInformation($request, $version);
 
         $persona->update(['current_version_id' => $version->id]);
 
@@ -344,6 +365,32 @@ class PersonaController extends Controller
                 'resolution_conditions_json' => $this->parseCommaList($data['resolution_conditions_text'] ?? null),
                 'persistence' => (int) ($data['persistence'] ?? 50),
                 'is_resolvable' => isset($data['is_resolvable']),
+                'is_active' => !isset($data['is_archived']),
+            ]);
+        }
+    }
+
+    private function syncHiddenInformation(Request $request, PersonaVersion $version): void
+    {
+        $version->hiddenInformation()->delete();
+
+        $infoItems = $request->input('hidden_information', []);
+
+        foreach ($infoItems as $data) {
+            if (empty($data['key']) || empty($data['title'])) {
+                continue;
+            }
+
+            $version->hiddenInformation()->create([
+                'key' => $data['key'],
+                'title' => $data['title'],
+                'information' => $data['information'] ?? null,
+                'sensitivity' => (int) ($data['sensitivity'] ?? 50),
+                'disclosure_difficulty' => (int) ($data['disclosure_difficulty'] ?? 50),
+                'relevant_topics_json' => $this->parseCommaList($data['relevant_topics_text'] ?? null),
+                'direct_question_effectiveness' => (int) ($data['direct_question_effectiveness'] ?? 50),
+                'trust_requirement' => (int) ($data['trust_requirement'] ?? 50),
+                'disclosure_conditions_json' => $this->parseCommaList($data['disclosure_conditions_text'] ?? null),
                 'is_active' => !isset($data['is_archived']),
             ]);
         }

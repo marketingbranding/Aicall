@@ -544,9 +544,130 @@
         @endfor
     </div>
 
-    {{-- Section 8: Initial Dynamic State & Sensitivity --}}
+    {{-- Section 8: Hidden Information --}}
     <div class="bg-white border border-gray-200 rounded-lg p-6">
-        <h3 class="text-lg font-medium text-gray-900 mb-4">8. Initial State & Sensitivitas</h3>
+        <h3 class="text-lg font-medium text-gray-900 mb-4">8. Informasi Tersembunyi</h3>
+        <p class="text-sm text-gray-500 mb-4">Informasi pribadi konsumen yang tidak diketahui sales dan perlu digali selama percakapan. Hanya terlihat oleh Super Admin / HQ.</p>
+
+        @php
+            $hiddenInfoModels = $current?->hiddenInformation ?? collect();
+            $oldHiddenInfo = old('hidden_information', []);
+        @endphp
+
+        @for ($slot = 0; $slot < 4; $slot++)
+            @php
+                $hiData = $oldHiddenInfo[$slot] ?? $hiddenInfoModels->values()[$slot] ?? null;
+                $hiKey = $hiData['key'] ?? ($hiData?->key ?? '');
+                $hiTitle = $hiData['title'] ?? ($hiData?->title ?? '');
+                $hiInfo = $hiData['information'] ?? ($hiData?->information ?? '');
+                $hiSensitivity = $hiData['sensitivity'] ?? ($hiData?->sensitivity ?? '50');
+                $hiDiscDiff = $hiData['disclosure_difficulty'] ?? ($hiData?->disclosure_difficulty ?? '50');
+                $hiDQEff = $hiData['direct_question_effectiveness'] ?? ($hiData?->direct_question_effectiveness ?? '50');
+                $hiTrustReq = $hiData['trust_requirement'] ?? ($hiData?->trust_requirement ?? '50');
+                $hiRelevantTopics = $hiData['relevant_topics_text'] ?? (isset($hiData['relevant_topics_json']) ? implode(', ', (array) $hiData['relevant_topics_json']) : '');
+                $hiDiscCond = $hiData['disclosure_conditions_text'] ?? (isset($hiData['disclosure_conditions_json']) ? implode(', ', (array) $hiData['disclosure_conditions_json']) : '');
+                $hiArchived = $hiData['is_archived'] ?? (isset($hiData['is_active']) ? !$hiData['is_active'] : false);
+            @endphp
+            <div class="border border-gray-200 rounded-lg p-4 mb-4">
+                <h4 class="text-sm font-semibold text-gray-800 mb-3">Informasi {{ $slot + 1 }}</h4>
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-1">Key</label>
+                        <input type="text" name="hidden_information[{{ $slot }}][key]" value="{{ $hiKey }}"
+                            class="w-full rounded-md border-gray-300 shadow-sm focus:border-sage-500 focus:ring-sage-500 text-sm">
+                        <p class="mt-1 text-xs text-gray-500">Kode unik, contoh: SLIK_MASALAH</p>
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-1">Judul</label>
+                        <input type="text" name="hidden_information[{{ $slot }}][title]" value="{{ $hiTitle }}"
+                            class="w-full rounded-md border-gray-300 shadow-sm focus:border-sage-500 focus:ring-sage-500 text-sm">
+                        <p class="mt-1 text-xs text-gray-500">Nama informasi, contoh: Riwayat SLIK Bermasalah</p>
+                    </div>
+
+                    <div class="md:col-span-2">
+                        <label class="block text-sm font-medium text-gray-700 mb-1">Informasi / Konteks</label>
+                        <textarea name="hidden_information[{{ $slot }}][information]" rows="2"
+                            class="w-full rounded-md border-gray-300 shadow-sm focus:border-sage-500 focus:ring-sage-500 text-sm">{{ $hiInfo }}</textarea>
+                    </div>
+
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-1">Sensitivitas</label>
+                        <select name="hidden_information[{{ $slot }}][sensitivity]"
+                            class="w-full rounded-md border-gray-300 shadow-sm focus:border-sage-500 focus:ring-sage-500 text-sm">
+                            <option value="">-- Pilih --</option>
+                            <option value="25" @selected((int) $hiSensitivity === 25)>Rendah</option>
+                            <option value="50" @selected((int) $hiSensitivity === 50)>Sedang</option>
+                            <option value="75" @selected((int) $hiSensitivity === 75)>Tinggi</option>
+                            <option value="100" @selected((int) $hiSensitivity === 100)>Sangat Tinggi</option>
+                        </select>
+                    </div>
+
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-1">Kesulitan Pengungkapan</label>
+                        <select name="hidden_information[{{ $slot }}][disclosure_difficulty]"
+                            class="w-full rounded-md border-gray-300 shadow-sm focus:border-sage-500 focus:ring-sage-500 text-sm">
+                            <option value="">-- Pilih --</option>
+                            <option value="25" @selected((int) $hiDiscDiff === 25)>Mudah</option>
+                            <option value="50" @selected((int) $hiDiscDiff === 50)>Sedang</option>
+                            <option value="75" @selected((int) $hiDiscDiff === 75)>Sulit</option>
+                            <option value="100" @selected((int) $hiDiscDiff === 100)>Sangat Sulit</option>
+                        </select>
+                    </div>
+
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-1">Efektivitas Pertanyaan Langsung</label>
+                        <select name="hidden_information[{{ $slot }}][direct_question_effectiveness]"
+                            class="w-full rounded-md border-gray-300 shadow-sm focus:border-sage-500 focus:ring-sage-500 text-sm">
+                            <option value="">-- Pilih --</option>
+                            <option value="25" @selected((int) $hiDQEff === 25)>Tidak Efektif</option>
+                            <option value="50" @selected((int) $hiDQEff === 50)>Cukup Efektif</option>
+                            <option value="75" @selected((int) $hiDQEff === 75)>Efektif</option>
+                            <option value="100" @selected((int) $hiDQEff === 100)>Sangat Efektif</option>
+                        </select>
+                    </div>
+
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-1">Kepercayaan yang Dibutuhkan</label>
+                        <select name="hidden_information[{{ $slot }}][trust_requirement]"
+                            class="w-full rounded-md border-gray-300 shadow-sm focus:border-sage-500 focus:ring-sage-500 text-sm">
+                            <option value="">-- Pilih --</option>
+                            <option value="25" @selected((int) $hiTrustReq === 25)>Rendah</option>
+                            <option value="50" @selected((int) $hiTrustReq === 50)>Sedang</option>
+                            <option value="75" @selected((int) $hiTrustReq === 75)>Tinggi</option>
+                            <option value="100" @selected((int) $hiTrustReq === 100)>Sangat Tinggi</option>
+                        </select>
+                    </div>
+
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-1">Arsipkan</label>
+                        <div class="flex items-center mt-2">
+                            <input type="checkbox" name="hidden_information[{{ $slot }}][is_archived]" value="1" @checked($hiArchived)
+                                class="rounded border-gray-300 text-sage-600 shadow-sm focus:ring-sage-500">
+                            <span class="ml-2 text-sm text-gray-600">Arsipkan informasi ini</span>
+                        </div>
+                    </div>
+
+                    <div class="md:col-span-2">
+                        <label class="block text-sm font-medium text-gray-700 mb-1">Topik Terkait</label>
+                        <p class="text-xs text-gray-500 mb-2">Pisahkan dengan koma. Contoh: SLIK, kredit macet, cicilan motor</p>
+                        <input type="text" name="hidden_information[{{ $slot }}][relevant_topics_text]" value="{{ $hiRelevantTopics }}"
+                            class="w-full rounded-md border-gray-300 shadow-sm focus:border-sage-500 focus:ring-sage-500 text-sm">
+                    </div>
+
+                    <div class="md:col-span-2">
+                        <label class="block text-sm font-medium text-gray-700 mb-1">Kondisi Pengungkapan</label>
+                        <p class="text-xs text-gray-500 mb-2">Pisahkan dengan koma. Contoh: trust > 50, sales bertanya tentang riwayat kredit</p>
+                        <input type="text" name="hidden_information[{{ $slot }}][disclosure_conditions_text]" value="{{ $hiDiscCond }}"
+                            class="w-full rounded-md border-gray-300 shadow-sm focus:border-sage-500 focus:ring-sage-500 text-sm">
+                    </div>
+                </div>
+            </div>
+        @endfor
+    </div>
+
+    {{-- Section 9: Initial Dynamic State & Sensitivity --}}
+    <div class="bg-white border border-gray-200 rounded-lg p-6">
+        <h3 class="text-lg font-medium text-gray-900 mb-4">9. Initial State & Sensitivitas</h3>
         <p class="text-sm text-gray-500 mb-4">Nilai awal dynamic state dan sensitivitas transisi.</p>
 
         <div class="mb-6">
@@ -632,9 +753,9 @@
         </div>
     </div>
 
-    {{-- Section 9: Salience Overrides --}}
+    {{-- Section 10: Salience Overrides --}}
     <div class="bg-white border border-gray-200 rounded-lg p-6">
-        <h3 class="text-lg font-medium text-gray-900 mb-4">9. Salience Overrides</h3>
+        <h3 class="text-lg font-medium text-gray-900 mb-4">10. Salience Overrides</h3>
         <p class="text-sm text-gray-500 mb-4">Prioritas perilaku yang muncul dalam interaksi.</p>
 
         @php

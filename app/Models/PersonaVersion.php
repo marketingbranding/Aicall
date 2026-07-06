@@ -46,7 +46,12 @@ class PersonaVersion extends Model
 
     public function objections(): HasMany
     {
-        return $this->hasMany(PersonaObjection::class, 'persona_version_id');
+        return $this->hasMany(PersonaObjection::class, 'persona_version_id')->orderBy('id');
+    }
+
+    public function hiddenInformation(): HasMany
+    {
+        return $this->hasMany(PersonaHiddenInformation::class, 'persona_version_id')->orderBy('id');
     }
 
     public function replicateForPersona(Persona $newPersona, User $user): self
@@ -61,6 +66,12 @@ class PersonaVersion extends Model
 
         foreach ($this->objections as $objection) {
             $objection->replicate()->fill([
+                'persona_version_id' => $replica->id,
+            ])->save();
+        }
+
+        foreach ($this->hiddenInformation as $info) {
+            $info->replicate()->fill([
                 'persona_version_id' => $replica->id,
             ])->save();
         }

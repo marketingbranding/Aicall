@@ -96,7 +96,7 @@ Verification note 2026-07-06: Created `app:create-super-admin` Artisan command w
 - [x] Implement Human Behavior Traits.
 - [x] Implement Initial Dynamic State and sensitivity advanced configuration.
 - [x] Implement Persona Objections.
-- [ ] Implement Hidden Information.
+- [x] Implement Hidden Information.
 - [x] Implement Persona duplication.
 - [x] Editing published/used persona creates new version.
 - [x] Prevent Sales access to Persona admin endpoints.
@@ -106,13 +106,15 @@ Verification note 2026-07-06: Created `app:create-super-admin` Artisan command w
 - [x] persona version immutability
 - [x] new version created on edit
 - [x] Sales cannot modify persona
-- [ ] hidden persona configuration is not exposed through Sales APIs
+- [x] hidden persona configuration is not exposed through Sales APIs
 
 Verification note 2026-07-06: Created `personas` and `persona_versions` tables with full schema readiness for all future sections. Built basic Persona CRUD (list, create, edit, archive, duplicate) with versioning on edit and immutable version history. Editing published persona creates new version. Sales access blocked via `PersonaPolicy` + `hq` middleware. All 150 tests pass / 364 assertions, and `npm run build` passes.
 
 Verification note 2026-07-06: Extended Persona Builder with 8 structured sections (Identitas, Kondisi & Kebutuhan Rumah, Pengetahuan & Keyakinan, Kepribadian, Human Behavior Traits, Cara Berkomunikasi, Initial State & Sensitivity, Salience Overrides) stored in corresponding `persona_versions` JSON columns. Added validation for all sections. Archived personas cannot be edited (update/archive denied). Version immutability verified: old versions remain unchanged after edits. All 162 tests pass / 417 assertions, and `npm run build` passes.
 
 Verification note 2026-07-06: Implemented Persona Objections as a dedicated `persona_objections` table linked to `persona_versions`. Added Section 7 (Keberatan) to the builder form with 4 slots supporting key, title, context, VISIBLE/HIDDEN visibility, severity, emotional_importance, persistence, is_resolvable, is_archived, and comma-separated trigger/disclosure/resolution conditions. Objections are version-bound and immutable through the versioning system. Persona duplication replicates objections. All 174 tests pass / 455 assertions, and `npm run build` passes.
+
+Verification note 2026-07-06: Implemented Persona Hidden Information as a dedicated `persona_hidden_information` table linked to `persona_versions`. Added Section 8 (Informasi Tersembunyi) to the builder form with 4 slots supporting key, title, information/context, sensitivity, disclosure_difficulty, direct_question_effectiveness, trust_requirement, relevant_topics, disclosure_conditions, and arsipkan. Renumbered Section 8 → 9 (Initial State & Sensitivitas) and Section 9 → 10 (Salience Overrides). Architecture kept ready for Director disclosure states (LOCKED, ELIGIBLE, DISCLOSED_PARTIAL, DISCLOSED_FULL). Hidden information is version-bound and immutable through the versioning system. Persona duplication replicates hidden information. All 186 tests pass / 502 assertions, and `npm run build` passes.
 
 ---
 
