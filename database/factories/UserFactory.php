@@ -2,6 +2,7 @@
 
 namespace Database\Factories;
 
+use App\Models\Branch;
 use App\Models\User;
 use Illuminate\Database\Eloquent\Factories\Factory;
 use Illuminate\Support\Facades\Hash;
@@ -61,6 +62,16 @@ class UserFactory extends Factory
     {
         return $this->state(fn (array $attributes) => [
             'status' => User::STATUS_SUSPENDED,
+        ]);
+    }
+
+    /**
+     * Assign the user to a branch.
+     */
+    public function forBranch(Branch $branch): static
+    {
+        return $this->state(fn (array $attributes) => [
+            'branch_id' => $branch->id,
         ]);
     }
 

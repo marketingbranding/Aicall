@@ -49,8 +49,8 @@ Hostinger note 2026-07-06: Current Hostinger PHP documentation shows PHP 8.3 as 
 - [x] Implement suspended-account screen.
 - [x] Implement forgot-password flow.
 - [x] Implement password-reset flow.
-- [ ] Create branches table/model.
-- [ ] Add user branch relationship.
+- [x] Create branches table/model.
+- [x] Add user branch relationship.
 - [ ] Add initial roles `SUPER_ADMIN` and `SALES`.
 - [x] Add account statuses.
 - [ ] Implement Policies/Gates/authorization services.
@@ -66,6 +66,8 @@ Verification note 2026-07-06: Installed Laravel Breeze 2.4 Blade authentication 
 Verification note 2026-07-06: Registration now uses Nama Lengkap, Email, Password, and Konfirmasi Password; stores full name in `users.name`; creates registered users as `PENDING_APPROVAL`; and redirects pending/suspended accounts away from the dashboard to clear status pages. Local migration applied successfully. `php artisan test` passed 33 tests / 86 assertions, and `npm run build` passed.
 
 Verification note 2026-07-06: Existing Breeze forgot-password/password-reset flow was audited against product requirements. It uses email-based reset links, Laravel's `password_reset_tokens` broker with 60-minute expiry, and hashed password updates. User-facing reset views and password broker status messages were localized to simple Bahasa Indonesia. `php artisan test` passed 33 tests / 90 assertions, and `npm run build` passed.
+
+Verification note 2026-07-06: Added `branches` table/model with unique code, name, active flag, timestamps, factory support, nullable `users.branch_id`, and User/Branch relationships. Local migration applied successfully. `php artisan test` passed 37 tests / 97 assertions, and `npm run build` passed.
 
 - [x] pending user cannot train
 - [x] suspended user cannot train
