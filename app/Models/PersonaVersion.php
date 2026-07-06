@@ -5,6 +5,7 @@ namespace App\Models;
 use Illuminate\Database\Eloquent\Attributes\Fillable;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\Relations\HasMany;
 
 #[Fillable([
     'persona_id', 'version_number', 'public_profile_text',
@@ -43,6 +44,11 @@ class PersonaVersion extends Model
         return $this->belongsTo(User::class, 'created_by');
     }
 
+    public function objections(): HasMany
+    {
+        return $this->hasMany(PersonaObjection::class, 'persona_version_id');
+    }
+
     public function replicateForPersona(Persona $newPersona, User $user): self
     {
         $replica = $this->replicate()->fill([
@@ -52,6 +58,12 @@ class PersonaVersion extends Model
         ]);
         $replica->created_at = now();
         $replica->save();
+
+        foreach ($this->objections as $objection) {
+            $objection->replicate()->fill([
+                'persona_version_id' => $replica->id,
+            ])->save();
+        }
 
         return $replica;
     }

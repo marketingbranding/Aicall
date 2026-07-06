@@ -95,7 +95,7 @@ Verification note 2026-07-06: Created `app:create-super-admin` Artisan command w
 - [x] Implement Communication Style.
 - [x] Implement Human Behavior Traits.
 - [x] Implement Initial Dynamic State and sensitivity advanced configuration.
-- [ ] Implement Persona Objections.
+- [x] Implement Persona Objections.
 - [ ] Implement Hidden Information.
 - [x] Implement Persona duplication.
 - [x] Editing published/used persona creates new version.
@@ -103,7 +103,7 @@ Verification note 2026-07-06: Created `app:create-super-admin` Artisan command w
 
 ### Phase 2 Tests
 
-- [ ] persona version immutability
+- [x] persona version immutability
 - [x] new version created on edit
 - [x] Sales cannot modify persona
 - [ ] hidden persona configuration is not exposed through Sales APIs
@@ -111,6 +111,8 @@ Verification note 2026-07-06: Created `app:create-super-admin` Artisan command w
 Verification note 2026-07-06: Created `personas` and `persona_versions` tables with full schema readiness for all future sections. Built basic Persona CRUD (list, create, edit, archive, duplicate) with versioning on edit and immutable version history. Editing published persona creates new version. Sales access blocked via `PersonaPolicy` + `hq` middleware. All 150 tests pass / 364 assertions, and `npm run build` passes.
 
 Verification note 2026-07-06: Extended Persona Builder with 8 structured sections (Identitas, Kondisi & Kebutuhan Rumah, Pengetahuan & Keyakinan, Kepribadian, Human Behavior Traits, Cara Berkomunikasi, Initial State & Sensitivity, Salience Overrides) stored in corresponding `persona_versions` JSON columns. Added validation for all sections. Archived personas cannot be edited (update/archive denied). Version immutability verified: old versions remain unchanged after edits. All 162 tests pass / 417 assertions, and `npm run build` passes.
+
+Verification note 2026-07-06: Implemented Persona Objections as a dedicated `persona_objections` table linked to `persona_versions`. Added Section 7 (Keberatan) to the builder form with 4 slots supporting key, title, context, VISIBLE/HIDDEN visibility, severity, emotional_importance, persistence, is_resolvable, is_archived, and comma-separated trigger/disclosure/resolution conditions. Objections are version-bound and immutable through the versioning system. Persona duplication replicates objections. All 174 tests pass / 455 assertions, and `npm run build` passes.
 
 ---
 

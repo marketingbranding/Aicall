@@ -4,6 +4,7 @@ namespace App\Http\Controllers\Hq;
 
 use App\Http\Controllers\Controller;
 use App\Models\Persona;
+use App\Models\PersonaObjection;
 use App\Models\PersonaVersion;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
@@ -69,6 +70,15 @@ class PersonaController extends Controller
             'state_sensitivity' => ['nullable', 'array'],
 
             'salience_overrides' => ['nullable', 'array'],
+
+            'objections' => ['nullable', 'array', 'max:10'],
+            'objections.*.key' => ['nullable', 'string', 'max:255'],
+            'objections.*.title' => ['nullable', 'string', 'max:255'],
+            'objections.*.context' => ['nullable', 'string', 'max:65535'],
+            'objections.*.visibility' => ['nullable', 'string', 'in:VISIBLE,HIDDEN'],
+            'objections.*.severity' => ['nullable', 'integer', 'in:0,25,50,75,100'],
+            'objections.*.emotional_importance' => ['nullable', 'integer', 'in:0,25,50,75,100'],
+            'objections.*.persistence' => ['nullable', 'integer', 'in:0,25,50,75,100'],
         ]);
 
         $persona = Persona::create([
@@ -95,6 +105,8 @@ class PersonaController extends Controller
             'created_at' => now(),
         ]);
 
+        $this->syncObjections($request, $version);
+
         $persona->update(['current_version_id' => $version->id]);
 
         return redirect()->route('hq.personas.index')
@@ -105,7 +117,7 @@ class PersonaController extends Controller
     {
         $this->authorize('update', $persona);
 
-        $persona->load('currentVersion');
+        $persona->load('currentVersion.objections');
 
         return view('hq.personas.edit', compact('persona'));
     }
@@ -150,6 +162,15 @@ class PersonaController extends Controller
             'state_sensitivity' => ['nullable', 'array'],
 
             'salience_overrides' => ['nullable', 'array'],
+
+            'objections' => ['nullable', 'array', 'max:10'],
+            'objections.*.key' => ['nullable', 'string', 'max:255'],
+            'objections.*.title' => ['nullable', 'string', 'max:255'],
+            'objections.*.context' => ['nullable', 'string', 'max:65535'],
+            'objections.*.visibility' => ['nullable', 'string', 'in:VISIBLE,HIDDEN'],
+            'objections.*.severity' => ['nullable', 'integer', 'in:0,25,50,75,100'],
+            'objections.*.emotional_importance' => ['nullable', 'integer', 'in:0,25,50,75,100'],
+            'objections.*.persistence' => ['nullable', 'integer', 'in:0,25,50,75,100'],
         ]);
 
         $persona->update([
@@ -176,6 +197,8 @@ class PersonaController extends Controller
             'created_by' => $request->user()->id,
             'created_at' => now(),
         ]);
+
+        $this->syncObjections($request, $version);
 
         $persona->update(['current_version_id' => $version->id]);
 
@@ -296,6 +319,34 @@ class PersonaController extends Controller
             'background_traits' => $background,
             'notes' => $data['notes'] ?? null,
         ], fn ($v) => $v !== null && $v !== '' && !(is_array($v) && empty($v)));
+    }
+
+    private function syncObjections(Request $request, PersonaVersion $version): void
+    {
+        $version->objections()->delete();
+
+        $objections = $request->input('objections', []);
+
+        foreach ($objections as $data) {
+            if (empty($data['key']) || empty($data['title'])) {
+                continue;
+            }
+
+            $version->objections()->create([
+                'key' => $data['key'],
+                'title' => $data['title'],
+                'context' => $data['context'] ?? null,
+                'visibility' => $data['visibility'] ?? 'VISIBLE',
+                'severity' => (int) ($data['severity'] ?? 50),
+                'emotional_importance' => (int) ($data['emotional_importance'] ?? 50),
+                'trigger_conditions_json' => $this->parseCommaList($data['trigger_conditions_text'] ?? null),
+                'disclosure_conditions_json' => $this->parseCommaList($data['disclosure_conditions_text'] ?? null),
+                'resolution_conditions_json' => $this->parseCommaList($data['resolution_conditions_text'] ?? null),
+                'persistence' => (int) ($data['persistence'] ?? 50),
+                'is_resolvable' => isset($data['is_resolvable']),
+                'is_active' => !isset($data['is_archived']),
+            ]);
+        }
     }
 
     private function parseCommaList(?string $text): array

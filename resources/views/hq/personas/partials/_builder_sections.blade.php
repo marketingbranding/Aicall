@@ -408,9 +408,145 @@
         </div>
     </div>
 
-    {{-- Section 7: Initial Dynamic State & Sensitivity --}}
+    {{-- Section 7: Objections --}}
     <div class="bg-white border border-gray-200 rounded-lg p-6">
-        <h3 class="text-lg font-medium text-gray-900 mb-4">7. Initial State & Sensitivitas</h3>
+        <h3 class="text-lg font-medium text-gray-900 mb-4">7. Keberatan (Objections)</h3>
+        <p class="text-sm text-gray-500 mb-4">Keberatan/objeksi yang mungkin muncul dari konsumen selama percakapan.</p>
+
+        @php
+            $objectionModels = $current?->objections ?? collect();
+            $oldObjections = old('objections', []);
+        @endphp
+
+        @for ($slot = 0; $slot < 4; $slot++)
+            @php
+                $objData = $oldObjections[$slot] ?? $objectionModels->values()[$slot] ?? null;
+                $objKey = $objData['key'] ?? ($objData?->key ?? '');
+                $objTitle = $objData['title'] ?? ($objData?->title ?? '');
+                $objContext = $objData['context'] ?? ($objData?->context ?? '');
+                $objVisibility = $objData['visibility'] ?? ($objData?->visibility ?? 'VISIBLE');
+                $objSeverity = $objData['severity'] ?? ($objData?->severity ?? '50');
+                $objEmoImp = $objData['emotional_importance'] ?? ($objData?->emotional_importance ?? '50');
+                $objPersistence = $objData['persistence'] ?? ($objData?->persistence ?? '50');
+                $objTrigText = $objData['trigger_conditions_text'] ?? (isset($objData['trigger_conditions_json']) ? implode(', ', (array) $objData['trigger_conditions_json']) : '');
+                $objDiscText = $objData['disclosure_conditions_text'] ?? (isset($objData['disclosure_conditions_json']) ? implode(', ', (array) $objData['disclosure_conditions_json']) : '');
+                $objResText = $objData['resolution_conditions_text'] ?? (isset($objData['resolution_conditions_json']) ? implode(', ', (array) $objData['resolution_conditions_json']) : '');
+                $objResolvable = $objData['is_resolvable'] ?? ($objData?->is_resolvable ?? true);
+                $objArchived = $objData['is_archived'] ?? (isset($objData['is_active']) ? !$objData['is_active'] : false);
+            @endphp
+            <div class="border border-gray-200 rounded-lg p-4 mb-4">
+                <h4 class="text-sm font-semibold text-gray-800 mb-3">Keberatan {{ $slot + 1 }}</h4>
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-1">Key</label>
+                        <input type="text" name="objections[{{ $slot }}][key]" value="{{ $objKey }}"
+                            class="w-full rounded-md border-gray-300 shadow-sm focus:border-sage-500 focus:ring-sage-500 text-sm">
+                        <p class="mt-1 text-xs text-gray-500">Kode unik, contoh: CICILAN_BERAT</p>
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-1">Judul</label>
+                        <input type="text" name="objections[{{ $slot }}][title]" value="{{ $objTitle }}"
+                            class="w-full rounded-md border-gray-300 shadow-sm focus:border-sage-500 focus:ring-sage-500 text-sm">
+                        <p class="mt-1 text-xs text-gray-500">Nama keberatan, contoh: Cicilan Terlalu Berat</p>
+                    </div>
+
+                    <div class="md:col-span-2">
+                        <label class="block text-sm font-medium text-gray-700 mb-1">Konteks / Deskripsi</label>
+                        <textarea name="objections[{{ $slot }}][context]" rows="2"
+                            class="w-full rounded-md border-gray-300 shadow-sm focus:border-sage-500 focus:ring-sage-500 text-sm">{{ $objContext }}</textarea>
+                    </div>
+
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-1">Visibilitas</label>
+                        <select name="objections[{{ $slot }}][visibility]"
+                            class="w-full rounded-md border-gray-300 shadow-sm focus:border-sage-500 focus:ring-sage-500 text-sm">
+                            <option value="VISIBLE" @selected($objVisibility === 'VISIBLE')>VISIBLE — Konsumen dapat mengungkapkan secara terbuka</option>
+                            <option value="HIDDEN" @selected($objVisibility === 'HIDDEN')>HIDDEN — Tersembunyi, perlu digali</option>
+                        </select>
+                    </div>
+
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-1">Arsipkan</label>
+                        <div class="flex items-center mt-2">
+                            <input type="checkbox" name="objections[{{ $slot }}][is_archived]" value="1" @checked($objArchived)
+                                class="rounded border-gray-300 text-sage-600 shadow-sm focus:ring-sage-500">
+                            <span class="ml-2 text-sm text-gray-600">Arsipkan keberatan ini</span>
+                        </div>
+                    </div>
+
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-1">Severitas</label>
+                        <select name="objections[{{ $slot }}][severity]"
+                            class="w-full rounded-md border-gray-300 shadow-sm focus:border-sage-500 focus:ring-sage-500 text-sm">
+                            <option value="">-- Pilih --</option>
+                            <option value="25" @selected((int) $objSeverity === 25)>Rendah</option>
+                            <option value="50" @selected((int) $objSeverity === 50)>Sedang</option>
+                            <option value="75" @selected((int) $objSeverity === 75)>Tinggi</option>
+                            <option value="100" @selected((int) $objSeverity === 100)>Sangat Tinggi</option>
+                        </select>
+                    </div>
+
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-1">Kepentingan Emosional</label>
+                        <select name="objections[{{ $slot }}][emotional_importance]"
+                            class="w-full rounded-md border-gray-300 shadow-sm focus:border-sage-500 focus:ring-sage-500 text-sm">
+                            <option value="">-- Pilih --</option>
+                            <option value="25" @selected((int) $objEmoImp === 25)>Rendah</option>
+                            <option value="50" @selected((int) $objEmoImp === 50)>Sedang</option>
+                            <option value="75" @selected((int) $objEmoImp === 75)>Tinggi</option>
+                            <option value="100" @selected((int) $objEmoImp === 100)>Sangat Tinggi</option>
+                        </select>
+                    </div>
+
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-1">Persistensi</label>
+                        <select name="objections[{{ $slot }}][persistence]"
+                            class="w-full rounded-md border-gray-300 shadow-sm focus:border-sage-500 focus:ring-sage-500 text-sm">
+                            <option value="">-- Pilih --</option>
+                            <option value="25" @selected((int) $objPersistence === 25)>Mudah Hilang</option>
+                            <option value="50" @selected((int) $objPersistence === 50)>Normal</option>
+                            <option value="75" @selected((int) $objPersistence === 75)>Cukup Persisten</option>
+                            <option value="100" @selected((int) $objPersistence === 100)>Sangat Persisten</option>
+                        </select>
+                    </div>
+
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-1">Dapat Diresolusi</label>
+                        <div class="flex items-center mt-2">
+                            <input type="checkbox" name="objections[{{ $slot }}][is_resolvable]" value="1" @checked($objResolvable)
+                                class="rounded border-gray-300 text-sage-600 shadow-sm focus:ring-sage-500">
+                            <span class="ml-2 text-sm text-gray-600">Keberatan ini dapat diresolusi</span>
+                        </div>
+                    </div>
+
+                    <div class="md:col-span-2">
+                        <label class="block text-sm font-medium text-gray-700 mb-1">Kondisi Pemicu</label>
+                        <p class="text-xs text-gray-500 mb-2">Pisahkan dengan koma. Contoh: sales menyebut harga, sales bertanya tentang cicilan</p>
+                        <input type="text" name="objections[{{ $slot }}][trigger_conditions_text]" value="{{ $objTrigText }}"
+                            class="w-full rounded-md border-gray-300 shadow-sm focus:border-sage-500 focus:ring-sage-500 text-sm">
+                    </div>
+
+                    <div class="md:col-span-2">
+                        <label class="block text-sm font-medium text-gray-700 mb-1">Kondisi Pengungkapan</label>
+                        <p class="text-xs text-gray-500 mb-2">Pisahkan dengan koma. Contoh: trust > 40, sales bertanya relevan</p>
+                        <input type="text" name="objections[{{ $slot }}][disclosure_conditions_text]" value="{{ $objDiscText }}"
+                            class="w-full rounded-md border-gray-300 shadow-sm focus:border-sage-500 focus:ring-sage-500 text-sm">
+                    </div>
+
+                    <div class="md:col-span-2">
+                        <label class="block text-sm font-medium text-gray-700 mb-1">Kondisi Resolusi</label>
+                        <p class="text-xs text-gray-500 mb-2">Pisahkan dengan koma. Contoh: acknowledge, clear explanation, sales janji follow-up</p>
+                        <input type="text" name="objections[{{ $slot }}][resolution_conditions_text]" value="{{ $objResText }}"
+                            class="w-full rounded-md border-gray-300 shadow-sm focus:border-sage-500 focus:ring-sage-500 text-sm">
+                    </div>
+                </div>
+            </div>
+        @endfor
+    </div>
+
+    {{-- Section 8: Initial Dynamic State & Sensitivity --}}
+    <div class="bg-white border border-gray-200 rounded-lg p-6">
+        <h3 class="text-lg font-medium text-gray-900 mb-4">8. Initial State & Sensitivitas</h3>
         <p class="text-sm text-gray-500 mb-4">Nilai awal dynamic state dan sensitivitas transisi.</p>
 
         <div class="mb-6">
@@ -496,9 +632,9 @@
         </div>
     </div>
 
-    {{-- Section 8: Salience Overrides --}}
+    {{-- Section 9: Salience Overrides --}}
     <div class="bg-white border border-gray-200 rounded-lg p-6">
-        <h3 class="text-lg font-medium text-gray-900 mb-4">8. Salience Overrides</h3>
+        <h3 class="text-lg font-medium text-gray-900 mb-4">9. Salience Overrides</h3>
         <p class="text-sm text-gray-500 mb-4">Prioritas perilaku yang muncul dalam interaksi.</p>
 
         @php
