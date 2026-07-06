@@ -54,7 +54,7 @@ Hostinger note 2026-07-06: Current Hostinger PHP documentation shows PHP 8.3 as 
 - [x] Add initial roles `SUPER_ADMIN` and `SALES`.
 - [x] Add account statuses.
 - [x] Implement Policies/Gates/authorization services.
-- [ ] Seed/create first Super Admin using secure documented procedure.
+- [x] Seed/create first Super Admin using secure documented procedure.
 - [ ] Build HQ pending-user list.
 - [ ] Implement assign branch + approve account.
 - [ ] Implement suspend/reactivate account.
@@ -72,6 +72,8 @@ Verification note 2026-07-06: Added `branches` table/model with unique code, nam
 Verification note 2026-07-06: Added centralized `UserRole` enum for `SUPER_ADMIN` and `SALES`, `users.role` with default `SALES`, User role helpers, HQ access helper, registration default role, and Super Admin factory/dev creation path. Local migration applied successfully. `php artisan test` passed 41 tests / 109 assertions, and `npm run build` passed.
 
 Verification note 2026-07-06: Implemented centralized authorization structure. Added `UserRole` enum methods for all business abilities (manage branches/users/personas/scenarios, approve users, configure AI providers, view all training sessions). Created `AuthServiceProvider` with gates for all abilities, `BranchPolicy`, and `UserPolicy`. Created `EnsureUserCanAccessHq` middleware registered as `hq` alias. All 36 authorization tests pass. `php artisan test` passed 77 tests / 162 assertions, and `npm run build` passed.
+
+Verification note 2026-07-06: Created `app:create-super-admin` Artisan command with required `--name`, `--email`, `--password` options, input validation, duplicate email rejection, single-Super-Admin guard (with `--force` override), and auto-set `email_verified_at`. Documented in deployment docs. `php artisan test` passed 88 tests / 189 assertions, and `npm run build` passed.
 
 - [x] pending user cannot train
 - [x] suspended user cannot train

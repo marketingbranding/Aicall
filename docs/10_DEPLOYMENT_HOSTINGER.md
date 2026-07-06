@@ -110,6 +110,31 @@ Before `php artisan optimize`, ensure production `.env` is configured.
 
 Do not run `key:generate` on every deployment after the application is already live.
 
+### Create First Super Admin
+
+After the initial deployment and migration, create the first Super Admin using the Artisan command:
+
+```bash
+php artisan app:create-super-admin --name="Nama Admin" --email="admin@example.com" --password="secure-password-min-8-chars"
+```
+
+Command behavior:
+
+- `--name`, `--email`, `--password` are all required.
+- Validates email format and minimum 8-character password.
+- Prevents creating a user with an email that already exists.
+- Prevents creating a second Super Admin unless `--force` is used (for emergency recovery or secondary admin).
+- Created user is `SUPER_ADMIN`, `ACTIVE`, `branch_id` null, with `email_verified_at` set.
+- After creation, the Super Admin can immediately log in and access HQ.
+
+To create additional Super Admins if needed:
+
+```bash
+php artisan app:create-super-admin --name="Nama Admin Lain" --email="admin2@example.com" --password="another-secure-password" --force
+```
+
+Never commit the command or its arguments to shell scripts stored in the repository.
+
 ## Subsequent SSH Deployment
 
 Conceptual flow:
@@ -318,18 +343,19 @@ The team must explicitly handle:
 6. Composer dependencies installed
 7. app key exists
 8. migrations applied
-9. assets built/deployed
-10. storage permissions verified
-11. `APP_DEBUG=false`
-12. HTTPS verified
-13. cron configured
-14. queue execution tested
-15. password reset email tested
-16. Gemini ephemeral-token endpoint tested
-17. 15-minute Live session/resumption manually tested
-18. evaluator fallback tested
-19. logs checked for secret leakage
-20. backup/recovery procedure documented
+9. first Super Admin created (`php artisan app:create-super-admin`)
+10. assets built/deployed
+11. storage permissions verified
+12. `APP_DEBUG=false`
+13. HTTPS verified
+14. cron configured
+15. queue execution tested
+16. password reset email tested
+17. Gemini ephemeral-token endpoint tested
+18. 15-minute Live session/resumption manually tested
+19. evaluator fallback tested
+20. logs checked for secret leakage
+21. backup/recovery procedure documented
 
 ## VPS Migration Triggers
 
