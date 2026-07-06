@@ -43,16 +43,16 @@ Hostinger note 2026-07-06: Current Hostinger PHP documentation shows PHP 8.3 as 
 ## Phase 1 — Authentication, Accounts, and Authorization
 
 - [x] Implement official Laravel authentication foundation.
-- [ ] Customize registration with full name, email, password, confirmation.
-- [ ] Default new sales account to `PENDING_APPROVAL`.
-- [ ] Implement waiting-for-approval screen.
-- [ ] Implement suspended-account screen.
+- [x] Customize registration with full name, email, password, confirmation.
+- [x] Default new sales account to `PENDING_APPROVAL`.
+- [x] Implement waiting-for-approval screen.
+- [x] Implement suspended-account screen.
 - [ ] Implement forgot-password flow.
 - [ ] Implement password-reset flow.
 - [ ] Create branches table/model.
 - [ ] Add user branch relationship.
 - [ ] Add initial roles `SUPER_ADMIN` and `SALES`.
-- [ ] Add account statuses.
+- [x] Add account statuses.
 - [ ] Implement Policies/Gates/authorization services.
 - [ ] Seed/create first Super Admin using secure documented procedure.
 - [ ] Build HQ pending-user list.
@@ -63,8 +63,10 @@ Hostinger note 2026-07-06: Current Hostinger PHP documentation shows PHP 8.3 as 
 
 Verification note 2026-07-06: Installed Laravel Breeze 2.4 Blade authentication scaffold on Laravel 13. Auth routes, controllers, Blade views, password reset flow, profile routes, and generated feature tests are present. `php artisan test` passed 27 tests / 71 assertions, and `npm run build` passed.
 
-- [ ] pending user cannot train
-- [ ] suspended user cannot train
+Verification note 2026-07-06: Registration now uses Nama Lengkap, Email, Password, and Konfirmasi Password; stores full name in `users.name`; creates registered users as `PENDING_APPROVAL`; and redirects pending/suspended accounts away from the dashboard to clear status pages. Local migration applied successfully. `php artisan test` passed 33 tests / 86 assertions, and `npm run build` passed.
+
+- [x] pending user cannot train
+- [x] suspended user cannot train
 - [ ] Sales cannot access HQ admin routes
 - [ ] password reset works in test environment
 - [ ] approval requires authorized HQ user
