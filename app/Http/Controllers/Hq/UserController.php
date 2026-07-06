@@ -19,12 +19,24 @@ class UserController extends Controller
             ->orderBy('created_at', 'desc')
             ->get();
 
+        $activeUsers = User::where('status', User::STATUS_ACTIVE)
+            ->where('role', UserRole::Sales)
+            ->orderBy('name')
+            ->get();
+
+        $suspendedUsers = User::where('status', User::STATUS_SUSPENDED)
+            ->where('role', UserRole::Sales)
+            ->orderBy('name')
+            ->get();
+
         $activeBranches = Branch::where('is_active', true)
             ->orderBy('name')
             ->get();
 
         return view('hq.users.index', [
             'pendingUsers' => $pendingUsers,
+            'activeUsers' => $activeUsers,
+            'suspendedUsers' => $suspendedUsers,
             'activeBranches' => $activeBranches,
         ]);
     }
@@ -52,5 +64,25 @@ class UserController extends Controller
 
         return redirect()->route('hq.users.pending')
             ->with('success', 'Pengguna berhasil disetujui dan ditugaskan ke cabang ' . $branch->name . '.');
+    }
+
+    public function suspend(Request $request, User $user): RedirectResponse
+    {
+        $this->authorize('suspend', $user);
+
+        $user->suspend();
+
+        return redirect()->route('hq.users.pending')
+            ->with('success', 'Akun ' . $user->name . ' berhasil ditangguhkan.');
+    }
+
+    public function reactivate(Request $request, User $user): RedirectResponse
+    {
+        $this->authorize('reactivate', $user);
+
+        $user->reactivate();
+
+        return redirect()->route('hq.users.pending')
+            ->with('success', 'Akun ' . $user->name . ' berhasil diaktifkan kembali.');
     }
 }

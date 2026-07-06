@@ -17,8 +17,14 @@
                     </x-nav-link>
 
                     @can('access-hq')
-                        <x-nav-link :href="route('hq.users.pending')" :active="request()->routeIs('hq.users.pending')">
-                            {{ __('HQ') }}
+                        <x-nav-link :href="route('hq.users.pending')" :active="request()->routeIs('hq.*') && !request()->routeIs('hq.personas.*')">
+                            {{ __('Pengguna') }}
+                        </x-nav-link>
+                    @endcan
+
+                    @can('manage-personas')
+                        <x-nav-link :href="route('hq.personas.index')" :active="request()->routeIs('hq.personas.*')">
+                            {{ __('Persona') }}
                         </x-nav-link>
                     @endcan
                 </div>
@@ -78,8 +84,14 @@
             </x-responsive-nav-link>
 
             @can('access-hq')
-                <x-responsive-nav-link :href="route('hq.users.pending')" :active="request()->routeIs('hq.users.pending')">
-                    {{ __('HQ') }}
+                <x-responsive-nav-link :href="route('hq.users.pending')" :active="request()->routeIs('hq.*') && !request()->routeIs('hq.personas.*')">
+                    {{ __('Pengguna') }}
+                </x-responsive-nav-link>
+            @endcan
+
+            @can('manage-personas')
+                <x-responsive-nav-link :href="route('hq.personas.index')" :active="request()->routeIs('hq.personas.*')">
+                    {{ __('Persona') }}
                 </x-responsive-nav-link>
             @endcan
         </div>

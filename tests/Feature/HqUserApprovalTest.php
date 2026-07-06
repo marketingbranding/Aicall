@@ -121,7 +121,7 @@ class HqUserApprovalTest extends TestCase
         $this->assertEquals($this->superAdmin->id, $this->pendingUser->approved_by);
     }
 
-    public function test_pending_user_list_no_longer_shows_approved_user(): void
+    public function test_pending_user_list_no_longer_shows_approved_user_in_pending_section(): void
     {
         $this->actingAs($this->superAdmin)
             ->post(route('hq.users.approve', $this->pendingUser), [
@@ -132,8 +132,9 @@ class HqUserApprovalTest extends TestCase
             ->get(route('hq.users.pending'));
 
         $response->assertOk();
-        $response->assertDontSee($this->pendingUser->name);
-        $response->assertDontSee($this->pendingUser->email);
+        $response->assertSee('Pengguna Aktif');
+        $response->assertSee($this->pendingUser->name);
+        $response->assertSee('Tidak ada pengguna yang menunggu persetujuan.');
     }
 
     public function test_approve_method_exists_on_user_model(): void

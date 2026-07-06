@@ -30,6 +30,25 @@ Route::middleware(['auth', 'hq'])->prefix('hq')->name('hq.')->group(function () 
         ->name('users.pending');
     Route::post('/users/{user}/approve', [\App\Http\Controllers\Hq\UserController::class, 'approve'])
         ->name('users.approve');
+    Route::post('/users/{user}/suspend', [\App\Http\Controllers\Hq\UserController::class, 'suspend'])
+        ->name('users.suspend');
+    Route::post('/users/{user}/reactivate', [\App\Http\Controllers\Hq\UserController::class, 'reactivate'])
+        ->name('users.reactivate');
+
+    Route::get('/personas', [\App\Http\Controllers\Hq\PersonaController::class, 'index'])
+        ->name('personas.index');
+    Route::get('/personas/create', [\App\Http\Controllers\Hq\PersonaController::class, 'create'])
+        ->name('personas.create');
+    Route::post('/personas', [\App\Http\Controllers\Hq\PersonaController::class, 'store'])
+        ->name('personas.store');
+    Route::get('/personas/{persona}/edit', [\App\Http\Controllers\Hq\PersonaController::class, 'edit'])
+        ->name('personas.edit');
+    Route::put('/personas/{persona}', [\App\Http\Controllers\Hq\PersonaController::class, 'update'])
+        ->name('personas.update');
+    Route::post('/personas/{persona}/archive', [\App\Http\Controllers\Hq\PersonaController::class, 'archive'])
+        ->name('personas.archive');
+    Route::post('/personas/{persona}/duplicate', [\App\Http\Controllers\Hq\PersonaController::class, 'duplicate'])
+        ->name('personas.duplicate');
 });
 
 Route::get('/_test/hq-ping', function () {

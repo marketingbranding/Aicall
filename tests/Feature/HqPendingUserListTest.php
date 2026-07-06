@@ -25,7 +25,7 @@ class HqPendingUserListTest extends TestCase
         $response->assertOk();
         $response->assertSee('Ahmad Subianto');
         $response->assertSee('ahmad@example.com');
-        $response->assertSee('Pengguna Menunggu Persetujuan');
+        $response->assertSee('Kelola Pengguna');
     }
 
     public function test_sales_user_cannot_view_pending_user_list(): void
@@ -61,7 +61,7 @@ class HqPendingUserListTest extends TestCase
         $response->assertSee('dewi@example.com');
     }
 
-    public function test_active_users_do_not_appear_in_list(): void
+    public function test_active_users_appear_in_active_section(): void
     {
         $superAdmin = User::factory()->superAdmin()->create();
         User::factory()->sales()->active()->create([
@@ -73,11 +73,12 @@ class HqPendingUserListTest extends TestCase
             ->get(route('hq.users.pending'));
 
         $response->assertOk();
-        $response->assertDontSee('Active User');
-        $response->assertDontSee('active@example.com');
+        $response->assertSee('Pengguna Aktif');
+        $response->assertSee('Active User');
+        $response->assertSee('active@example.com');
     }
 
-    public function test_suspended_users_do_not_appear_in_list(): void
+    public function test_suspended_users_appear_in_suspended_section(): void
     {
         $superAdmin = User::factory()->superAdmin()->create();
         User::factory()->sales()->suspended()->create([
@@ -89,8 +90,9 @@ class HqPendingUserListTest extends TestCase
             ->get(route('hq.users.pending'));
 
         $response->assertOk();
-        $response->assertDontSee('Suspended User');
-        $response->assertDontSee('suspended@example.com');
+        $response->assertSee('Pengguna Ditangguhkan');
+        $response->assertSee('Suspended User');
+        $response->assertSee('suspended@example.com');
     }
 
     public function test_empty_state_when_no_pending_users(): void
@@ -104,14 +106,15 @@ class HqPendingUserListTest extends TestCase
         $response->assertSee('Tidak ada pengguna yang menunggu persetujuan.');
     }
 
-    public function test_super_admin_can_access_hq_nav_link(): void
+    public function test_super_admin_can_access_hq_nav_links(): void
     {
         $superAdmin = User::factory()->superAdmin()->create();
 
         $response = $this->actingAs($superAdmin)
             ->get(route('dashboard'));
 
-        $response->assertSee('HQ');
+        $response->assertSee('Pengguna');
+        $response->assertSee('Persona');
     }
 
     public function test_sales_cannot_see_hq_nav_link(): void

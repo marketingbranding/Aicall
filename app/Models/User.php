@@ -101,6 +101,16 @@ class User extends Authenticatable
         ]);
     }
 
+    public function suspend(): void
+    {
+        $this->update(['status' => self::STATUS_SUSPENDED]);
+    }
+
+    public function reactivate(): void
+    {
+        $this->update(['status' => self::STATUS_ACTIVE]);
+    }
+
     /**
      * @return BelongsTo<Branch, $this>
      */

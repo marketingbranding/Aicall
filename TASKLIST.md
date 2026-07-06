@@ -57,7 +57,7 @@ Hostinger note 2026-07-06: Current Hostinger PHP documentation shows PHP 8.3 as 
 - [x] Seed/create first Super Admin using secure documented procedure.
 - [x] Build HQ pending-user list.
 - [x] Implement assign branch + approve account.
-- [ ] Implement suspend/reactivate account.
+- [x] Implement suspend/reactivate account.
 
 ### Phase 1 Tests
 
@@ -85,8 +85,8 @@ Verification note 2026-07-06: Created `app:create-super-admin` Artisan command w
 
 ## Phase 2 — Persona Domain and Versioning
 
-- [ ] Create `personas` and immutable `persona_versions` model strategy.
-- [ ] Implement Persona status and archival.
+- [x] Create `personas` and immutable `persona_versions` model strategy.
+- [x] Implement Persona status and archival.
 - [ ] Implement Persona Builder sections.
 - [ ] Implement Static Persona configuration.
 - [ ] Implement Housing Context.
@@ -97,16 +97,18 @@ Verification note 2026-07-06: Created `app:create-super-admin` Artisan command w
 - [ ] Implement Initial Dynamic State and sensitivity advanced configuration.
 - [ ] Implement Persona Objections.
 - [ ] Implement Hidden Information.
-- [ ] Implement Persona duplication.
-- [ ] Editing published/used persona creates new version.
-- [ ] Prevent Sales access to Persona admin endpoints.
+- [x] Implement Persona duplication.
+- [x] Editing published/used persona creates new version.
+- [x] Prevent Sales access to Persona admin endpoints.
 
 ### Phase 2 Tests
 
 - [ ] persona version immutability
-- [ ] new version created on edit
-- [ ] Sales cannot modify persona
+- [x] new version created on edit
+- [x] Sales cannot modify persona
 - [ ] hidden persona configuration is not exposed through Sales APIs
+
+Verification note 2026-07-06: Created `personas` and `persona_versions` tables with full schema readiness for all future sections. Built basic Persona CRUD (list, create, edit, archive, duplicate) with versioning on edit and immutable version history. Editing published persona creates new version. Sales access blocked via `PersonaPolicy` + `hq` middleware. All 150 tests pass / 364 assertions, and `npm run build` passes.
 
 ---
 

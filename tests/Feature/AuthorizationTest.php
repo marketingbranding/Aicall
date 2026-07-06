@@ -4,6 +4,7 @@ namespace Tests\Feature;
 
 use App\Enums\UserRole;
 use App\Models\Branch;
+use App\Models\Persona;
 use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Gate;
@@ -246,5 +247,66 @@ class AuthorizationTest extends TestCase
         $this->assertTrue(method_exists(\App\Policies\UserPolicy::class, 'update'));
         $this->assertTrue(method_exists(\App\Policies\UserPolicy::class, 'delete'));
         $this->assertTrue(method_exists(\App\Policies\UserPolicy::class, 'approve'));
+        $this->assertTrue(method_exists(\App\Policies\UserPolicy::class, 'suspend'));
+        $this->assertTrue(method_exists(\App\Policies\UserPolicy::class, 'reactivate'));
+    }
+
+    public function test_super_admin_can_view_personas(): void
+    {
+        $this->assertTrue($this->superAdmin->can('viewAny', Persona::class));
+    }
+
+    public function test_sales_cannot_view_personas(): void
+    {
+        $this->assertFalse($this->sales->can('viewAny', Persona::class));
+    }
+
+    public function test_super_admin_can_create_persona(): void
+    {
+        $this->assertTrue($this->superAdmin->can('create', Persona::class));
+    }
+
+    public function test_sales_cannot_create_persona(): void
+    {
+        $this->assertFalse($this->sales->can('create', Persona::class));
+    }
+
+    public function test_super_admin_can_update_persona(): void
+    {
+        $persona = Persona::factory()->create();
+
+        $this->assertTrue($this->superAdmin->can('update', $persona));
+    }
+
+    public function test_sales_cannot_update_persona(): void
+    {
+        $persona = Persona::factory()->create();
+
+        $this->assertFalse($this->sales->can('update', $persona));
+    }
+
+    public function test_super_admin_can_archive_persona(): void
+    {
+        $persona = Persona::factory()->create();
+
+        $this->assertTrue($this->superAdmin->can('archive', $persona));
+    }
+
+    public function test_sales_cannot_archive_persona(): void
+    {
+        $persona = Persona::factory()->create();
+
+        $this->assertFalse($this->sales->can('archive', $persona));
+    }
+
+    public function test_persona_policy_methods_exist(): void
+    {
+        $this->assertTrue(method_exists(\App\Policies\PersonaPolicy::class, 'viewAny'));
+        $this->assertTrue(method_exists(\App\Policies\PersonaPolicy::class, 'view'));
+        $this->assertTrue(method_exists(\App\Policies\PersonaPolicy::class, 'create'));
+        $this->assertTrue(method_exists(\App\Policies\PersonaPolicy::class, 'update'));
+        $this->assertTrue(method_exists(\App\Policies\PersonaPolicy::class, 'delete'));
+        $this->assertTrue(method_exists(\App\Policies\PersonaPolicy::class, 'archive'));
+        $this->assertTrue(method_exists(\App\Policies\PersonaPolicy::class, 'duplicate'));
     }
 }

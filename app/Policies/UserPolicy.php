@@ -2,6 +2,7 @@
 
 namespace App\Policies;
 
+use App\Enums\UserRole;
 use App\Models\User;
 
 class UserPolicy
@@ -34,5 +35,27 @@ class UserPolicy
     public function approve(User $user, User $target): bool
     {
         return $user->canApproveUsers();
+    }
+
+    public function suspend(User $user, User $target): bool
+    {
+        if (! $user->canManageUsers()) {
+            return false;
+        }
+
+        if ($user->is($target)) {
+            return false;
+        }
+
+        if ($target->isSuperAdmin() && User::where('role', UserRole::SuperAdmin)->count() === 1) {
+            return false;
+        }
+
+        return true;
+    }
+
+    public function reactivate(User $user, User $target): bool
+    {
+        return $user->canManageUsers();
     }
 }
