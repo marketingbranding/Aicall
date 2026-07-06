@@ -87,14 +87,14 @@ Verification note 2026-07-06: Created `app:create-super-admin` Artisan command w
 
 - [x] Create `personas` and immutable `persona_versions` model strategy.
 - [x] Implement Persona status and archival.
-- [ ] Implement Persona Builder sections.
-- [ ] Implement Static Persona configuration.
-- [ ] Implement Housing Context.
-- [ ] Implement Knowledge and Beliefs.
-- [ ] Implement Personality Profile.
-- [ ] Implement Communication Style.
-- [ ] Implement Human Behavior Traits.
-- [ ] Implement Initial Dynamic State and sensitivity advanced configuration.
+- [x] Implement Persona Builder sections.
+- [x] Implement Static Persona configuration.
+- [x] Implement Housing Context.
+- [x] Implement Knowledge and Beliefs.
+- [x] Implement Personality Profile.
+- [x] Implement Communication Style.
+- [x] Implement Human Behavior Traits.
+- [x] Implement Initial Dynamic State and sensitivity advanced configuration.
 - [ ] Implement Persona Objections.
 - [ ] Implement Hidden Information.
 - [x] Implement Persona duplication.
@@ -109,6 +109,8 @@ Verification note 2026-07-06: Created `app:create-super-admin` Artisan command w
 - [ ] hidden persona configuration is not exposed through Sales APIs
 
 Verification note 2026-07-06: Created `personas` and `persona_versions` tables with full schema readiness for all future sections. Built basic Persona CRUD (list, create, edit, archive, duplicate) with versioning on edit and immutable version history. Editing published persona creates new version. Sales access blocked via `PersonaPolicy` + `hq` middleware. All 150 tests pass / 364 assertions, and `npm run build` passes.
+
+Verification note 2026-07-06: Extended Persona Builder with 8 structured sections (Identitas, Kondisi & Kebutuhan Rumah, Pengetahuan & Keyakinan, Kepribadian, Human Behavior Traits, Cara Berkomunikasi, Initial State & Sensitivity, Salience Overrides) stored in corresponding `persona_versions` JSON columns. Added validation for all sections. Archived personas cannot be edited (update/archive denied). Version immutability verified: old versions remain unchanged after edits. All 162 tests pass / 417 assertions, and `npm run build` passes.
 
 ---
 

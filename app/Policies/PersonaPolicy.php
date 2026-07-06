@@ -24,7 +24,7 @@ class PersonaPolicy
 
     public function update(User $user, Persona $persona): bool
     {
-        return $user->canManagePersonas();
+        return $user->canManagePersonas() && $persona->isActive();
     }
 
     public function delete(User $user, Persona $persona): bool
@@ -34,7 +34,7 @@ class PersonaPolicy
 
     public function archive(User $user, Persona $persona): bool
     {
-        return $user->canManagePersonas();
+        return $user->canManagePersonas() && $persona->isActive();
     }
 
     public function duplicate(User $user, Persona $persona): bool
