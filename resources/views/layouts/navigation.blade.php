@@ -15,6 +15,12 @@
                     <x-nav-link :href="route('dashboard')" :active="request()->routeIs('dashboard')">
                         {{ __('Dashboard') }}
                     </x-nav-link>
+
+                    @can('access-hq')
+                        <x-nav-link :href="route('hq.users.pending')" :active="request()->routeIs('hq.users.pending')">
+                            {{ __('HQ') }}
+                        </x-nav-link>
+                    @endcan
                 </div>
             </div>
 
@@ -70,6 +76,12 @@
             <x-responsive-nav-link :href="route('dashboard')" :active="request()->routeIs('dashboard')">
                 {{ __('Dashboard') }}
             </x-responsive-nav-link>
+
+            @can('access-hq')
+                <x-responsive-nav-link :href="route('hq.users.pending')" :active="request()->routeIs('hq.users.pending')">
+                    {{ __('HQ') }}
+                </x-responsive-nav-link>
+            @endcan
         </div>
 
         <!-- Responsive Settings Options -->

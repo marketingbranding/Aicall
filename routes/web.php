@@ -25,6 +25,13 @@ Route::get('/dashboard', function () {
     return view('dashboard');
 })->middleware(['auth', 'verified', 'account.active'])->name('dashboard');
 
+Route::middleware(['auth', 'hq'])->prefix('hq')->name('hq.')->group(function () {
+    Route::get('/users/pending', [\App\Http\Controllers\Hq\UserController::class, 'index'])
+        ->name('users.pending');
+    Route::post('/users/{user}/approve', [\App\Http\Controllers\Hq\UserController::class, 'approve'])
+        ->name('users.approve');
+});
+
 Route::get('/_test/hq-ping', function () {
     return response('ok');
 })->middleware(['auth', 'hq']);

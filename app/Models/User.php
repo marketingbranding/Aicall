@@ -8,11 +8,12 @@ use Database\Factories\UserFactory;
 use Illuminate\Database\Eloquent\Attributes\Fillable;
 use Illuminate\Database\Eloquent\Attributes\Hidden;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
+use App\Models\Branch;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
 
-#[Fillable(['branch_id', 'name', 'email', 'password', 'role', 'status'])]
+#[Fillable(['branch_id', 'name', 'email', 'password', 'role', 'status', 'approved_at', 'approved_by'])]
 #[Hidden(['password', 'remember_token'])]
 class User extends Authenticatable
 {
@@ -90,12 +91,30 @@ class User extends Authenticatable
         return $this->role->canViewAllTrainingSessions();
     }
 
+    public function approve(Branch $branch, User $approvedBy): void
+    {
+        $this->update([
+            'status' => self::STATUS_ACTIVE,
+            'branch_id' => $branch->id,
+            'approved_at' => now(),
+            'approved_by' => $approvedBy->id,
+        ]);
+    }
+
     /**
      * @return BelongsTo<Branch, $this>
      */
     public function branch(): BelongsTo
     {
         return $this->belongsTo(Branch::class);
+    }
+
+    /**
+     * @return BelongsTo<User, $this>
+     */
+    public function approvedBy(): BelongsTo
+    {
+        return $this->belongsTo(User::class, 'approved_by');
     }
 
     /**

@@ -55,8 +55,8 @@ Hostinger note 2026-07-06: Current Hostinger PHP documentation shows PHP 8.3 as 
 - [x] Add account statuses.
 - [x] Implement Policies/Gates/authorization services.
 - [x] Seed/create first Super Admin using secure documented procedure.
-- [ ] Build HQ pending-user list.
-- [ ] Implement assign branch + approve account.
+- [x] Build HQ pending-user list.
+- [x] Implement assign branch + approve account.
 - [ ] Implement suspend/reactivate account.
 
 ### Phase 1 Tests
@@ -79,7 +79,7 @@ Verification note 2026-07-06: Created `app:create-super-admin` Artisan command w
 - [x] suspended user cannot train
 - [x] Sales cannot access HQ admin routes
 - [x] password reset works in test environment
-- [ ] approval requires authorized HQ user
+- [x] approval requires authorized HQ user
 
 ---
 
