@@ -25,4 +25,8 @@ Route::get('/dashboard', function () {
     return view('dashboard');
 })->middleware(['auth', 'verified', 'account.active'])->name('dashboard');
 
+Route::get('/_test/hq-ping', function () {
+    return response('ok');
+})->middleware(['auth', 'hq']);
+
 require __DIR__.'/auth.php';

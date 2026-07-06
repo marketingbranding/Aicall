@@ -55,6 +55,41 @@ class User extends Authenticatable
         return $this->role->canAccessHq();
     }
 
+    public function canManageBranches(): bool
+    {
+        return $this->role->canManageBranches();
+    }
+
+    public function canManageUsers(): bool
+    {
+        return $this->role->canManageUsers();
+    }
+
+    public function canApproveUsers(): bool
+    {
+        return $this->role->canApproveUsers();
+    }
+
+    public function canManagePersonas(): bool
+    {
+        return $this->role->canManagePersonas();
+    }
+
+    public function canManageScenarios(): bool
+    {
+        return $this->role->canManageScenarios();
+    }
+
+    public function canConfigureAiProviders(): bool
+    {
+        return $this->role->canConfigureAiProviders();
+    }
+
+    public function canViewAllTrainingSessions(): bool
+    {
+        return $this->role->canViewAllTrainingSessions();
+    }
+
     /**
      * @return BelongsTo<Branch, $this>
      */
