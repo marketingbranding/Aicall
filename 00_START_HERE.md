@@ -39,6 +39,8 @@ Read the documentation in this order:
 
 `TASKLIST.md` is the implementation execution order.
 
+Authentication requirements currently live across `docs/01_PRODUCT_SPEC.md`, `docs/02_TECH_STACK.md`, `docs/04_DATABASE_SCHEMA.md`, `docs/09_UI_UX_DESIGN.md`, `docs/11_TESTING_SPEC.md`, and `TASKLIST.md`. Do not create a separate `AUTH_SPEC.md` unless authentication rules grow enough to justify a dedicated spec.
+
 ## Rules for Coding Agents
 
 - Read all specification files before changing architecture.

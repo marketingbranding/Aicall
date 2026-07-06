@@ -17,6 +17,8 @@ class PasswordResetTest extends TestCase
         $response = $this->get('/forgot-password');
 
         $response->assertStatus(200);
+        $response->assertSee('Lupa password?');
+        $response->assertSee('Kirim Tautan Reset');
     }
 
     public function test_reset_password_link_can_be_requested(): void
@@ -42,6 +44,8 @@ class PasswordResetTest extends TestCase
             $response = $this->get('/reset-password/'.$notification->token);
 
             $response->assertStatus(200);
+            $response->assertSee('Buat password baru');
+            $response->assertSee('Konfirmasi Password Baru');
 
             return true;
         });
