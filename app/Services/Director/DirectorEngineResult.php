@@ -10,6 +10,9 @@ readonly class DirectorEngineResult
     /** @var HiddenInfoTransition[] */
     public array $hiddenInfoTransitions;
 
+    /** @var BoundaryTransition[] */
+    public array $boundaryTransitions;
+
     public function __construct(
         public DirectorState $state,
         public StateTransition $appliedTransition,
@@ -17,9 +20,11 @@ readonly class DirectorEngineResult
         public ?string $rejectionReason = null,
         ?array $objectionTransitions = null,
         ?array $hiddenInfoTransitions = null,
+        ?array $boundaryTransitions = null,
     ) {
         $this->objectionTransitions = $objectionTransitions ?? [];
         $this->hiddenInfoTransitions = $hiddenInfoTransitions ?? [];
+        $this->boundaryTransitions = $boundaryTransitions ?? [];
     }
 
     public function toArray(): array
@@ -36,6 +41,10 @@ readonly class DirectorEngineResult
             'hidden_info_transitions' => array_map(
                 fn(HiddenInfoTransition $t) => $t->toArray(),
                 $this->hiddenInfoTransitions,
+            ),
+            'boundary_transitions' => array_map(
+                fn(BoundaryTransition $t) => $t->toArray(),
+                $this->boundaryTransitions,
             ),
         ];
     }

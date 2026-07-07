@@ -214,7 +214,7 @@ Verification note 2026-07-07: Created `RoleplayInstruction` (DTO with 11 typed s
 - [ ] Implement core communication transition rules.
 - [x] Implement Objection State Machine.
 - [x] Implement Hidden Information State Machine.
-- [ ] Implement Boundary State Machine.
+- [x] Implement Boundary State Machine.
 - [ ] Implement Conversation Phase Manager.
 - [ ] Implement Difficulty modifiers.
 - [ ] Implement Director Note Planner.
@@ -233,7 +233,7 @@ Verification note 2026-07-07: Created `RoleplayInstruction` (DTO with 11 typed s
 - [ ] note cooldown
 - [x] objection transitions
 - [x] disclosure transitions
-- [ ] boundary transitions
+- [x] boundary transitions
 - [ ] AI-ending eligibility
 
 Verification note 2026-07-07: Created StateToBehaviorTranslator, StateBand enum, and BehaviorTranslationResult DTO. Translator maps 7 DirectorState vars to qualitative bands (VERY_LOW—VERY_HIGH) per spec thresholds (0-20, 21-40, 41-60, 61-80, 81-100). Generates deterministic Bahasa Indonesia qualitative text and Director Note suggestions. No AI dependency. All 311 tests pass (931 assertions), `npm run build` succeeds (56 modules).
@@ -243,6 +243,8 @@ Verification note 2026-07-07: Implemented diminishing returns via DiminishingRet
 Verification note 2026-07-07: Implemented ObjectionStateMachine with ObjectionState enum (7 states: DORMANT, ACTIVE_HIDDEN, ACTIVE_VISIBLE, ACKNOWLEDGED, PARTIALLY_RESOLVED, RESOLVED, REACTIVATED) and ObjectionTransition DTO. Transition rules defined for OBJECTION_TRIGGERED, RELEVANT_FOLLOW_UP, CONCERN_DISCOVERED, OBJECTION_ACKNOWLEDGED, OBJECTION_PARTIALLY_RESOLVED, OBJECTION_RESOLVED_CANDIDATE, DISMISSED_CONCERN, UNSUPPORTED_CLAIM, CONTRADICTORY_STATEMENT. Integrated into RoleplayDirectorEngine via injectable `?ObjectionStateMachine`. DirectorEngineResult includes `objectionTransitions` array and `toArray()`. All 352 tests pass (1058 assertions), `npm run build` succeeds (56 modules).
 
 Verification note 2026-07-07: Implemented HiddenInfoStateMachine with HiddenInfoState enum (4 states: LOCKED, ELIGIBLE, DISCLOSED_PARTIAL, DISCLOSED_FULL) and HiddenInfoTransition DTO. State transitions consider trust_requirement, sensitivity, direct_question_effectiveness, relevant_topics, and event type. Trigger events: RELEVANT_FOLLOW_UP, EMPATHIC_RESPONSE, CLEAR_EXPLANATION, TRUST_SIGNAL, CONCERN_DISCOVERED, APPROPRIATE_NEXT_STEP. Integrated into RoleplayDirectorEngine via injectable `?HiddenInfoStateMachine`. DirectorEngineResult includes `hiddenInfoTransitions`. All 377 tests pass (1132 assertions), `npm run build` succeeds (56 modules).
+
+Verification note 2026-07-07: Implemented BoundaryStateMachine with BoundaryState enum (9 states: NOT_TESTED, MILD_TEST_OCCURRED, SALESPERSON_PARTICIPATED, INDIRECTLY_REDIRECTED, CLEAR_BOUNDARY_ESTABLISHED, CUSTOMER_RESPECTED_BOUNDARY, CUSTOMER_RETESTED_BOUNDARY, SIGNIFICANT_VIOLATION, PROFESSIONAL_TERMINATION_ELIGIBLE) and BoundaryTransition DTO. Transition rules for all 8 boundary event types (CUSTOMER_BOUNDARY_TEST, SALESPERSON_PARTICIPATED_PERSONALLY, INDIRECT_REDIRECTION, CLEAR_PROFESSIONAL_REDIRECTION, EXPLICIT_BOUNDARY_SET, CUSTOMER_RESPECTED_BOUNDARY, CUSTOMER_REPEATED_BOUNDARY_TEST, SIGNIFICANT_BOUNDARY_VIOLATION). Cooldown repeat protection prevents same boundary test type within 3 events. Persona parameters (respect_for_boundaries, persistence_after_redirection) influence Director Notes. Integrated into RoleplayDirectorEngine via injectable `?BoundaryStateMachine`. DirectorEngineResult includes `boundaryTransitions`. All 407 tests pass (1216 assertions), `npm run build` succeeds (56 modules).
 
 ---
 
