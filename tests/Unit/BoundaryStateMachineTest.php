@@ -397,6 +397,64 @@ class BoundaryStateMachineTest extends TestCase
         $this->assertNotNull($array['director_note']);
     }
 
+    public function test_high_boundary_persistence_shortens_cooldown(): void
+    {
+        $bsm = new BoundaryStateMachine;
+        $bsm->setBoundaryPersistence(85);
+        $event = new RoleplayEvent(RoleplayEventType::CUSTOMER_BOUNDARY_TEST);
+
+        $bsm->processEvent($event);
+        $this->assertSame(2, $bsm->getCooldownRemaining());
+
+        $other = new RoleplayEvent(RoleplayEventType::ACTIVE_LISTENING);
+        $bsm->processEvent($other);
+        $this->assertSame(1, $bsm->getCooldownRemaining());
+
+        $bsm->processEvent($other);
+        $allow = $bsm->processEvent($event);
+        $this->assertTrue($allow->accepted);
+    }
+
+    public function test_low_boundary_persistence_lengthens_cooldown(): void
+    {
+        $bsm = new BoundaryStateMachine;
+        $bsm->setBoundaryPersistence(20);
+        $event = new RoleplayEvent(RoleplayEventType::CUSTOMER_BOUNDARY_TEST);
+
+        $bsm->processEvent($event);
+        $this->assertSame(4, $bsm->getCooldownRemaining());
+
+        $other = new RoleplayEvent(RoleplayEventType::ACTIVE_LISTENING);
+        $bsm->processEvent($other);
+        $this->assertSame(3, $bsm->getCooldownRemaining());
+
+        $bsm->processEvent($other);
+        $stillBlocked = $bsm->processEvent($event);
+        $this->assertFalse($stillBlocked->accepted);
+
+        $bsm->processEvent($other);
+        $bsm->processEvent($other);
+        $allow = $bsm->processEvent($event);
+        $this->assertTrue($allow->accepted);
+    }
+
+    public function test_normal_boundary_persistence_uses_default_cooldown(): void
+    {
+        $bsm = new BoundaryStateMachine;
+        $event = new RoleplayEvent(RoleplayEventType::CUSTOMER_BOUNDARY_TEST);
+
+        $bsm->processEvent($event);
+        $this->assertSame(3, $bsm->getCooldownRemaining());
+
+        $other = new RoleplayEvent(RoleplayEventType::ACTIVE_LISTENING);
+        $bsm->processEvent($other);
+        $bsm->processEvent($other);
+        $bsm->processEvent($other);
+
+        $allow = $bsm->processEvent($event);
+        $this->assertTrue($allow->accepted);
+    }
+
     public function test_professional_termination_is_terminal(): void
     {
         $bsm = new BoundaryStateMachine;

@@ -88,7 +88,7 @@ class ObjectionStateMachine
         return $map;
     }
 
-    public function processEvent(RoleplayEvent $event): ?ObjectionTransition
+    public function processEvent(RoleplayEvent $event, int $objectionPersistence = 50): ?ObjectionTransition
     {
         if ($this->transitionCount >= self::MAX_TRANSITIONS) {
             return null;
@@ -104,11 +104,11 @@ class ObjectionStateMachine
         }
 
         if ($objectionKey !== null && isset($this->states[$objectionKey])) {
-            return $this->applyTransition($objectionKey, $eventType, $transitionDef, $event);
+            return $this->applyTransition($objectionKey, $eventType, $transitionDef, $event, $objectionPersistence);
         }
 
         if ($objectionKey === null) {
-            $matched = $this->findFirstMatchingObjection($eventType, $transitionDef, $event);
+            $matched = $this->findFirstMatchingObjection($eventType, $transitionDef, $event, $objectionPersistence);
             if ($matched !== null) {
                 return $matched;
             }
@@ -117,7 +117,7 @@ class ObjectionStateMachine
         return null;
     }
 
-    private function applyTransition(string $key, string $eventType, array $transitionDef, RoleplayEvent $event): ?ObjectionTransition
+    private function applyTransition(string $key, string $eventType, array $transitionDef, RoleplayEvent $event, int $objectionPersistence = 50): ?ObjectionTransition
     {
         $currentState = $this->states[$key];
         $fromValue = $currentState->value;
@@ -151,6 +151,17 @@ class ObjectionStateMachine
             );
         }
 
+        if ($this->isForwardResolution($currentState, $targetState) && !$this->isPersistenceSufficient($objectionPersistence, $currentState)) {
+            return new ObjectionTransition(
+                objectionKey: $key,
+                fromState: $currentState,
+                toState: $currentState,
+                triggeredBy: $event->type,
+                accepted: false,
+                rejectionReason: 'Objection persistence too high for transition',
+            );
+        }
+
         $this->states[$key] = $targetState;
         $this->transitionCount++;
 
@@ -164,7 +175,7 @@ class ObjectionStateMachine
         );
     }
 
-    private function findFirstMatchingObjection(string $eventType, array $transitionDef, RoleplayEvent $event): ?ObjectionTransition
+    private function findFirstMatchingObjection(string $eventType, array $transitionDef, RoleplayEvent $event, int $objectionPersistence = 50): ?ObjectionTransition
     {
         foreach ($this->states as $key => $currentState) {
             $fromValue = $currentState->value;
@@ -181,6 +192,10 @@ class ObjectionStateMachine
                 ?? null;
 
             if ($targetState === null) {
+                continue;
+            }
+
+            if ($this->isForwardResolution($currentState, $targetState) && !$this->isPersistenceSufficient($objectionPersistence, $currentState)) {
                 continue;
             }
 
@@ -205,6 +220,24 @@ class ObjectionStateMachine
         $this->states = [];
         $this->configs = [];
         $this->transitionCount = 0;
+    }
+
+    private function isForwardResolution(ObjectionState $from, ObjectionState $to): bool
+    {
+        return match (true) {
+            $from === ObjectionState::ACKNOWLEDGED && $to === ObjectionState::PARTIALLY_RESOLVED => true,
+            $from === ObjectionState::PARTIALLY_RESOLVED && $to === ObjectionState::RESOLVED => true,
+            default => false,
+        };
+    }
+
+    private function isPersistenceSufficient(int $persistence, ObjectionState $from): bool
+    {
+        return match ($from) {
+            ObjectionState::ACKNOWLEDGED => $persistence < 85,
+            ObjectionState::PARTIALLY_RESOLVED => $persistence < 65,
+            default => true,
+        };
     }
 
     private function buildDirectorNote(ObjectionState $from, ObjectionState $to, RoleplayEventType $event, string $key): ?string

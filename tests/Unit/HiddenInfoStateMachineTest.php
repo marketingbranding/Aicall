@@ -408,6 +408,51 @@ class HiddenInfoStateMachineTest extends TestCase
         $this->assertTrue($resultHigh->accepted);
     }
 
+    public function test_normal_disclosure_resistance_uses_default_trust(): void
+    {
+        $hism = new HiddenInfoStateMachine;
+        $hism->register('slik', 'SLIK Issue', 50, 50, ['income'], 50, 50);
+
+        $event = new RoleplayEvent(RoleplayEventType::RELEVANT_FOLLOW_UP, topic: 'income', relatedObjectionKey: 'slik');
+
+        $needs = $hism->processEvent($event, currentTrust: 34, disclosureResistance: 50);
+        $this->assertFalse($needs->accepted);
+
+        $sufficient = $hism->processEvent($event, currentTrust: 35, disclosureResistance: 50);
+        $this->assertTrue($sufficient->accepted);
+    }
+
+    public function test_high_disclosure_resistance_requires_more_trust(): void
+    {
+        $hism = new HiddenInfoStateMachine;
+        $hism->register('slik', 'SLIK Issue', 50, 50, ['income'], 50, 50);
+
+        $event = new RoleplayEvent(RoleplayEventType::RELEVANT_FOLLOW_UP, topic: 'income', relatedObjectionKey: 'slik');
+
+        $insufficient = $hism->processEvent($event, currentTrust: 41, disclosureResistance: 85);
+        $this->assertFalse($insufficient->accepted);
+        $this->assertSame('Trust requirement not met', $insufficient->rejectionReason);
+
+        $sufficient = $hism->processEvent($event, currentTrust: 42, disclosureResistance: 85);
+        $this->assertTrue($sufficient->accepted);
+        $this->assertSame(HiddenInfoState::ELIGIBLE, $sufficient->toState);
+    }
+
+    public function test_low_disclosure_resistance_makes_disclosure_easier(): void
+    {
+        $hism = new HiddenInfoStateMachine;
+        $hism->register('slik', 'SLIK Issue', 50, 50, ['income'], 50, 50);
+
+        $event = new RoleplayEvent(RoleplayEventType::RELEVANT_FOLLOW_UP, topic: 'income', relatedObjectionKey: 'slik');
+
+        $borderline = $hism->processEvent($event, currentTrust: 29, disclosureResistance: 20);
+        $this->assertFalse($borderline->accepted);
+
+        $sufficient = $hism->processEvent($event, currentTrust: 30, disclosureResistance: 20);
+        $this->assertTrue($sufficient->accepted);
+        $this->assertSame(HiddenInfoState::ELIGIBLE, $sufficient->toState);
+    }
+
     public function test_hidden_info_transition_to_array(): void
     {
         $transition = new HiddenInfoTransition(

@@ -89,7 +89,7 @@ class HiddenInfoStateMachine
         return $map;
     }
 
-    public function processEvent(RoleplayEvent $event, int $currentTrust): ?HiddenInfoTransition
+    public function processEvent(RoleplayEvent $event, int $currentTrust, int $disclosureResistance = 50): ?HiddenInfoTransition
     {
         if ($this->transitionCount >= self::MAX_TRANSITIONS) {
             return null;
@@ -99,17 +99,17 @@ class HiddenInfoStateMachine
         $key = $event->relatedObjectionKey;
 
         if ($key !== null && isset($this->states[$key])) {
-            return $this->evaluateTransition($key, $eventType, $event, $currentTrust);
+            return $this->evaluateTransition($key, $eventType, $event, $currentTrust, $disclosureResistance);
         }
 
         if ($key === null) {
-            return $this->findFirstMatching($eventType, $event, $currentTrust);
+            return $this->findFirstMatching($eventType, $event, $currentTrust, $disclosureResistance);
         }
 
         return null;
     }
 
-    private function evaluateTransition(string $key, string $eventType, RoleplayEvent $event, int $currentTrust): ?HiddenInfoTransition
+    private function evaluateTransition(string $key, string $eventType, RoleplayEvent $event, int $currentTrust, int $disclosureResistance = 50): ?HiddenInfoTransition
     {
         $currentState = $this->states[$key];
         $config = $this->configs[$key] ?? null;
@@ -144,7 +144,7 @@ class HiddenInfoStateMachine
             );
         }
 
-        if (!$this->checkTrustRequirement($config, $matchingRule['trust_mult'], $currentTrust)) {
+        if (!$this->checkTrustRequirement($config, $matchingRule['trust_mult'], $currentTrust, $disclosureResistance)) {
             return new HiddenInfoTransition(
                 key: $key,
                 fromState: $currentState,
@@ -169,7 +169,7 @@ class HiddenInfoStateMachine
         );
     }
 
-    private function findFirstMatching(string $eventType, RoleplayEvent $event, int $currentTrust): ?HiddenInfoTransition
+    private function findFirstMatching(string $eventType, RoleplayEvent $event, int $currentTrust, int $disclosureResistance = 50): ?HiddenInfoTransition
     {
         foreach ($this->states as $key => $currentState) {
             $config = $this->configs[$key] ?? null;
@@ -187,7 +187,7 @@ class HiddenInfoStateMachine
                 continue;
             }
 
-            if (!$this->checkTrustRequirement($config, $matchingRule['trust_mult'], $currentTrust)) {
+            if (!$this->checkTrustRequirement($config, $matchingRule['trust_mult'], $currentTrust, $disclosureResistance)) {
                 continue;
             }
 
@@ -249,7 +249,7 @@ class HiddenInfoStateMachine
         return false;
     }
 
-    private function checkTrustRequirement(array $config, float $trustMult, int $currentTrust): bool
+    private function checkTrustRequirement(array $config, float $trustMult, int $currentTrust, int $disclosureResistance = 50): bool
     {
         $trustReq = $config['trust_requirement'];
         $sensitivity = $config['sensitivity'];
@@ -257,8 +257,9 @@ class HiddenInfoStateMachine
 
         $sensitivityFactor = 1.0 + (($sensitivity - 50) / 200.0);
         $dqeFactor = 1.0 + ((50 - $dqe) / 200.0);
+        $resistanceFactor = 1.0 + (($disclosureResistance - 50) / 200.0);
 
-        $requiredTrust = (int) ceil($trustReq * $trustMult * $sensitivityFactor * $dqeFactor);
+        $requiredTrust = (int) ceil($trustReq * $trustMult * $sensitivityFactor * $dqeFactor * $resistanceFactor);
 
         return $currentTrust >= $requiredTrust;
     }

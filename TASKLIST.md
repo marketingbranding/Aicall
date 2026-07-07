@@ -202,21 +202,21 @@ Verification note 2026-07-07: Created `RoleplayInstruction` (DTO with 11 typed s
 
 ## Phase 6 — Roleplay Director Engine v1
 
-- [ ] Create `RoleplayDirectorEngine` domain module.
-- [ ] Implement bounded Dynamic State.
+- [x] Create `RoleplayDirectorEngine` domain module.
+- [x] Implement bounded Dynamic State.
 - [x] Implement State-to-Behavior Translator.
-- [ ] Implement normalized Event taxonomy.
-- [ ] Implement Event validation.
-- [ ] Implement Event fingerprint/deduplication.
-- [ ] Implement recent-event memory.
+- [x] Implement normalized Event taxonomy.
+- [x] Implement Event validation.
+- [x] Implement Event fingerprint/deduplication.
+- [x] Implement recent-event memory.
 - [x] Implement diminishing returns.
-- [ ] Implement transition-rule architecture.
-- [ ] Implement core communication transition rules.
+- [x] Implement transition-rule architecture.
+- [x] Implement core communication transition rules.
 - [x] Implement Objection State Machine.
 - [x] Implement Hidden Information State Machine.
 - [x] Implement Boundary State Machine.
 - [x] Implement Conversation Phase Manager.
-- [ ] Implement Difficulty modifiers.
+- [x] Implement Difficulty modifiers.
 - [x] Implement Director Note Planner.
 - [x] Implement Director Note cooldown and duplicate suppression.
 - [x] Implement AI-ending eligibility.
@@ -228,7 +228,7 @@ Verification note 2026-07-07: Created `RoleplayInstruction` (DTO with 11 typed s
 - [x] normalized event taxonomy (29 event types)
 - [x] duplicate event suppression
 - [x] state-to-behavior translation (13 tests)
-- [ ] persona multiplier effects
+- [ ] persona multiplier effects (deferred — requires full Phase 6 integration wiring with API runtime)
 - [x] diminishing returns
 - [x] note cooldown
 - [x] objection transitions
@@ -255,6 +255,8 @@ Verification note 2026-07-07: Implemented DirectorNoteCooldown with turn-based c
 Verification note 2026-07-07: Implemented AiEndEligibility + AiEndEligibilityResult DTO. `evaluate()` accepts allowAiEndCall, DirectorState, boundaryStateValue, conversationPhaseValue, and event counts. Priority-ordered checks: not_enabled → boundary_termination → trust_collapse (≤20) → low_engagement (≤20) → high_pressure (≥80) → repeated_dismissal (≥2) → aggressive_closing_early (≥2 in pre-COMMITMENT phases) → repeated_unsupported_claim (≥3) → natural_ending (ENDING phase). Qualitative Bahasa Indonesia director note, no numeric state exposure. Deterministic output. All 536 tests pass (1553 assertions), `npm run build` succeeds (56 modules).
 
 Verification note 2026-07-07: Implemented DirectorSessionSummaryBuilder with DirectorSessionSummary and DirectorSessionEvent DTOs. Builder accumulates objection/hidden-info/boundary/phase transitions, state threshold notes, and AI-ending eligibility. Filters out rejected and self-transitions. Events sorted by turn in `build()`. Output is JSON-serializable via `toArray()`. Reset support for all accumulated state. All 556 tests pass (1609 assertions), `npm run build` succeeds (56 modules).
+
+Verification note 2026-07-07: Wired DifficultyModifier's objectionPersistence, disclosureResistance, and boundaryPersistence into ObjectionStateMachine, HiddenInfoStateMachine, and BoundaryStateMachine. OSM: blocks ACKNOWLEDGED→PARTIALLY_RESOLVED at ≥85 persistence, blocks PARTIALLY_RESOLVED→RESOLVED at ≥65. HISM: scales trust requirement by `1 + ((disclosureResistance - 50) / 200)` factor. BSM: dynamic cooldown via `round(5 - boundaryPersistence * 0.04)` clamped 1–5. No modifier (null) uses default NORMAL (50) behavior. All 575 tests pass (1666 assertions), `npm run build` succeeds (56 modules).
 
 ---
 

@@ -67,9 +67,13 @@ class RoleplayDirectorEngine
 
         $newState = $currentState->apply($adjustedTransition);
 
+        $objectionPersistence = $this->difficultyModifier?->objectionPersistence ?? 50;
+        $disclosureResistance = $this->difficultyModifier?->disclosureResistance ?? 50;
+        $boundaryPersistence = $this->difficultyModifier?->boundaryPersistence ?? 50;
+
         $objectionTransitions = [];
         if ($this->objectionStateMachine !== null) {
-            $ot = $this->objectionStateMachine->processEvent($event);
+            $ot = $this->objectionStateMachine->processEvent($event, $objectionPersistence);
             if ($ot !== null) {
                 $objectionTransitions[] = $ot;
             }
@@ -77,7 +81,7 @@ class RoleplayDirectorEngine
 
         $hiddenInfoTransitions = [];
         if ($this->hiddenInfoStateMachine !== null) {
-            $ht = $this->hiddenInfoStateMachine->processEvent($event, $newState->getTrust());
+            $ht = $this->hiddenInfoStateMachine->processEvent($event, $newState->getTrust(), $disclosureResistance);
             if ($ht !== null) {
                 $hiddenInfoTransitions[] = $ht;
             }
@@ -85,6 +89,7 @@ class RoleplayDirectorEngine
 
         $boundaryTransitions = [];
         if ($this->boundaryStateMachine !== null) {
+            $this->boundaryStateMachine->setBoundaryPersistence($boundaryPersistence);
             $bt = $this->boundaryStateMachine->processEvent($event, $newState->getTrust());
             if ($bt !== null) {
                 $boundaryTransitions[] = $bt;

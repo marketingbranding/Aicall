@@ -4,7 +4,7 @@ namespace App\Services\Director;
 
 class BoundaryStateMachine
 {
-    private const int COOLDOWN_EVENTS = 3;
+    private const int BASE_COOLDOWN_EVENTS = 3;
 
     private const array TRANSITION_RULES = [
         BoundaryState::NOT_TESTED->value => [
@@ -74,6 +74,7 @@ class BoundaryStateMachine
     private ?string $lastBoundaryTestType = null;
     private int $eventsSinceLastBoundaryTest = 0;
     private int $transitionCount = 0;
+    private int $boundaryPersistence = 50;
     private const int MAX_TRANSITIONS = 50;
 
     public function __construct(
@@ -164,13 +165,30 @@ class BoundaryStateMachine
         );
     }
 
+    public function setBoundaryPersistence(int $value): void
+    {
+        $this->boundaryPersistence = max(0, min(100, $value));
+    }
+
+    public function getBoundaryPersistence(): int
+    {
+        return $this->boundaryPersistence;
+    }
+
     private function isInCooldown(string $eventType): bool
     {
         if ($this->lastBoundaryTestType === null) {
             return false;
         }
 
-        return $this->lastBoundaryTestType === $eventType && $this->eventsSinceLastBoundaryTest < self::COOLDOWN_EVENTS;
+        $threshold = $this->getCooldownEvents();
+        return $this->lastBoundaryTestType === $eventType && $this->eventsSinceLastBoundaryTest < $threshold;
+    }
+
+    private function getCooldownEvents(): int
+    {
+        $cooldown = (int) round(5 - ($this->boundaryPersistence * 0.04));
+        return max(1, min(5, $cooldown));
     }
 
     public function getCooldownRemaining(): int
@@ -179,7 +197,8 @@ class BoundaryStateMachine
             return 0;
         }
 
-        return max(0, self::COOLDOWN_EVENTS - $this->eventsSinceLastBoundaryTest);
+        $threshold = $this->getCooldownEvents();
+        return max(0, $threshold - $this->eventsSinceLastBoundaryTest);
     }
 
     public function reset(): void
@@ -196,6 +215,7 @@ class BoundaryStateMachine
             'current_state' => $this->currentState->value,
             'respect_for_boundaries' => $this->respectForBoundaries,
             'persistence_after_redirection' => $this->persistenceAfterRedirection,
+            'boundary_persistence' => $this->boundaryPersistence,
             'transition_count' => $this->transitionCount,
             'cooldown_remaining' => $this->getCooldownRemaining(),
         ];

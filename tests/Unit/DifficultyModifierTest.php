@@ -5,6 +5,9 @@ namespace Tests\Unit;
 use App\Services\Director\DifficultyLevel;
 use App\Services\Director\DifficultyModifier;
 use App\Services\Director\DirectorState;
+use App\Services\Director\ObjectionState;
+use App\Services\Director\HiddenInfoState;
+use App\Services\Director\BoundaryState;
 use App\Services\Director\RoleplayDirectorEngine;
 use App\Services\Director\RoleplayEvent;
 use App\Services\Director\RoleplayEventType;
@@ -399,5 +402,169 @@ class DifficultyModifierTest extends TestCase
 
         $this->assertSame(1.0, $m->trustGainMultiplier);
         $this->assertSame(50, $m->irritationSensitivity);
+    }
+
+    public function test_expert_objection_persistence_blocks_partial_resolution_in_engine(): void
+    {
+        $osm = new \App\Services\Director\ObjectionStateMachine;
+        $osm->register('obj', 'VISIBLE', 50, 'Test');
+
+        $engine = new RoleplayDirectorEngine(
+            objectionStateMachine: $osm,
+        );
+        $engine->setDifficultyModifier(DifficultyModifier::forLevel(DifficultyLevel::EXPERT));
+        $state = DirectorState::default();
+
+        $engine->applyEvent(
+            new RoleplayEvent(RoleplayEventType::OBJECTION_TRIGGERED, relatedObjectionKey: 'obj'),
+            $state,
+        );
+        $engine->applyEvent(
+            new RoleplayEvent(RoleplayEventType::OBJECTION_ACKNOWLEDGED, relatedObjectionKey: 'obj'),
+            $state,
+        );
+
+        $result = $engine->applyEvent(
+            new RoleplayEvent(RoleplayEventType::OBJECTION_PARTIALLY_RESOLVED, relatedObjectionKey: 'obj'),
+            $state,
+        );
+
+        $this->assertCount(1, $result->objectionTransitions);
+        $this->assertFalse($result->objectionTransitions[0]->accepted);
+        $this->assertSame('Objection persistence too high for transition', $result->objectionTransitions[0]->rejectionReason);
+    }
+
+    public function test_expert_disclosure_resistance_blocks_disclosure_in_engine(): void
+    {
+        $hism = new \App\Services\Director\HiddenInfoStateMachine;
+        $hism->register('slik', 'SLIK Issue', 50, 50, ['income'], 50, 70);
+
+        $engine = new RoleplayDirectorEngine(
+            hiddenInfoStateMachine: $hism,
+        );
+        $engine->setDifficultyModifier(DifficultyModifier::forLevel(DifficultyLevel::EXPERT));
+        $state = DirectorState::default();
+
+        $result = $engine->applyEvent(
+            new RoleplayEvent(RoleplayEventType::RELEVANT_FOLLOW_UP, topic: 'income', relatedObjectionKey: 'slik'),
+            $state,
+        );
+
+        $this->assertCount(1, $result->hiddenInfoTransitions);
+        $this->assertFalse($result->hiddenInfoTransitions[0]->accepted);
+        $this->assertSame('Trust requirement not met', $result->hiddenInfoTransitions[0]->rejectionReason);
+    }
+
+    public function test_beginner_disclosure_resistance_makes_disclosure_easier_in_engine(): void
+    {
+        $hism = new \App\Services\Director\HiddenInfoStateMachine;
+        $hism->register('slik', 'SLIK Issue', 50, 50, ['income'], 50, 70);
+
+        $engine = new RoleplayDirectorEngine(
+            hiddenInfoStateMachine: $hism,
+        );
+        $engine->setDifficultyModifier(DifficultyModifier::forLevel(DifficultyLevel::BEGINNER));
+        $state = DirectorState::default();
+
+        $result = $engine->applyEvent(
+            new RoleplayEvent(RoleplayEventType::RELEVANT_FOLLOW_UP, topic: 'income', relatedObjectionKey: 'slik'),
+            $state,
+        );
+
+        $this->assertCount(1, $result->hiddenInfoTransitions);
+        $this->assertTrue($result->hiddenInfoTransitions[0]->accepted);
+        $this->assertSame(HiddenInfoState::ELIGIBLE, $result->hiddenInfoTransitions[0]->toState);
+    }
+
+    public function test_expert_boundary_persistence_affects_bsm_in_engine(): void
+    {
+        $bsm = new \App\Services\Director\BoundaryStateMachine;
+
+        $engine = new RoleplayDirectorEngine(
+            boundaryStateMachine: $bsm,
+        );
+        $this->assertSame(50, $bsm->getBoundaryPersistence());
+
+        $engine->setDifficultyModifier(DifficultyModifier::forLevel(DifficultyLevel::EXPERT));
+        $state = DirectorState::default();
+
+        $engine->applyEvent(new RoleplayEvent(RoleplayEventType::CUSTOMER_BOUNDARY_TEST), $state);
+        $this->assertSame(85, $bsm->getBoundaryPersistence());
+        $this->assertSame(2, $bsm->getCooldownRemaining());
+    }
+
+    public function test_beginner_boundary_persistence_affects_bsm_in_engine(): void
+    {
+        $bsm = new \App\Services\Director\BoundaryStateMachine;
+
+        $engine = new RoleplayDirectorEngine(
+            boundaryStateMachine: $bsm,
+        );
+        $engine->setDifficultyModifier(DifficultyModifier::forLevel(DifficultyLevel::BEGINNER));
+        $state = DirectorState::default();
+
+        $engine->applyEvent(new RoleplayEvent(RoleplayEventType::CUSTOMER_BOUNDARY_TEST), $state);
+        $this->assertSame(20, $bsm->getBoundaryPersistence());
+        $this->assertSame(4, $bsm->getCooldownRemaining());
+    }
+
+    public function test_normal_difficulty_preserves_existing_behavior_in_engine(): void
+    {
+        $osm = new \App\Services\Director\ObjectionStateMachine;
+        $osm->register('obj', 'VISIBLE', 50, 'Test');
+
+        $hism = new \App\Services\Director\HiddenInfoStateMachine;
+        $hism->register('slik', 'SLIK Issue', 50, 50, ['income'], 50, 50);
+
+        $bsm = new \App\Services\Director\BoundaryStateMachine;
+
+        $engine = new RoleplayDirectorEngine(
+            objectionStateMachine: $osm,
+            hiddenInfoStateMachine: $hism,
+            boundaryStateMachine: $bsm,
+        );
+        $engine->setDifficultyModifier(DifficultyModifier::forLevel(DifficultyLevel::NORMAL));
+        $state = DirectorState::default();
+
+        $r1 = $engine->applyEvent(new RoleplayEvent(RoleplayEventType::ACTIVE_LISTENING), $state);
+        $this->assertSame(53, $r1->state->getTrust());
+
+        $r2 = $engine->applyEvent(new RoleplayEvent(RoleplayEventType::RELEVANT_FOLLOW_UP, topic: 'income', relatedObjectionKey: 'slik'), $state);
+        $this->assertCount(1, $r2->hiddenInfoTransitions);
+        $this->assertTrue($r2->hiddenInfoTransitions[0]->accepted);
+
+        $r3 = $engine->applyEvent(new RoleplayEvent(RoleplayEventType::OBJECTION_TRIGGERED, relatedObjectionKey: 'obj'), $state);
+        $this->assertTrue($r3->objectionTransitions[0]->accepted);
+    }
+
+    public function test_no_difficulty_modifier_uses_default_behavior_for_state_machines(): void
+    {
+        $osm = new \App\Services\Director\ObjectionStateMachine;
+        $osm->register('obj', 'VISIBLE', 50, 'Test');
+
+        $hism = new \App\Services\Director\HiddenInfoStateMachine;
+        $hism->register('slik', 'SLIK Issue', 50, 50, ['income'], 50, 50);
+
+        $bsm = new \App\Services\Director\BoundaryStateMachine;
+
+        $engine = new RoleplayDirectorEngine(
+            objectionStateMachine: $osm,
+            hiddenInfoStateMachine: $hism,
+            boundaryStateMachine: $bsm,
+        );
+        $state = DirectorState::default();
+
+        $engine->applyEvent(new RoleplayEvent(RoleplayEventType::CUSTOMER_BOUNDARY_TEST), $state);
+        $engine->applyEvent(new RoleplayEvent(RoleplayEventType::CLEAR_PROFESSIONAL_REDIRECTION, topic: 'test'), $state);
+        $r1 = $engine->applyEvent(new RoleplayEvent(RoleplayEventType::CUSTOMER_BOUNDARY_TEST, topic: 'new'), $state);
+        $this->assertCount(1, $r1->boundaryTransitions);
+        $this->assertFalse($r1->boundaryTransitions[0]->accepted);
+        $this->assertSame('Boundary test in cooldown', $r1->boundaryTransitions[0]->rejectionReason);
+
+        $engine->applyEvent(new RoleplayEvent(RoleplayEventType::RELEVANT_FOLLOW_UP, topic: 'income', relatedObjectionKey: 'slik'), $state);
+        $engine->applyEvent(new RoleplayEvent(RoleplayEventType::OBJECTION_TRIGGERED, relatedObjectionKey: 'obj'), $state);
+        $engine->applyEvent(new RoleplayEvent(RoleplayEventType::OBJECTION_ACKNOWLEDGED, relatedObjectionKey: 'obj'), $state);
+        $r2 = $engine->applyEvent(new RoleplayEvent(RoleplayEventType::OBJECTION_PARTIALLY_RESOLVED, relatedObjectionKey: 'obj'), $state);
+        $this->assertTrue($r2->objectionTransitions[0]->accepted);
     }
 }

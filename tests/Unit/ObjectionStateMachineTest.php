@@ -424,6 +424,95 @@ class ObjectionStateMachineTest extends TestCase
         $this->assertFalse($osm->has('obj'));
     }
 
+    public function test_normal_persistence_allows_full_resolution_chain(): void
+    {
+        $osm = new ObjectionStateMachine;
+        $osm->register('obj', 'VISIBLE', 50, 'Test');
+
+        $osm->processEvent(new RoleplayEvent(RoleplayEventType::OBJECTION_TRIGGERED, relatedObjectionKey: 'obj'));
+        $osm->processEvent(new RoleplayEvent(RoleplayEventType::OBJECTION_ACKNOWLEDGED, relatedObjectionKey: 'obj'));
+
+        $partial = $osm->processEvent(new RoleplayEvent(RoleplayEventType::OBJECTION_PARTIALLY_RESOLVED, relatedObjectionKey: 'obj'));
+        $this->assertTrue($partial->accepted);
+        $this->assertSame(ObjectionState::PARTIALLY_RESOLVED, $partial->toState);
+
+        $resolved = $osm->processEvent(new RoleplayEvent(RoleplayEventType::OBJECTION_RESOLVED_CANDIDATE, relatedObjectionKey: 'obj'));
+        $this->assertTrue($resolved->accepted);
+        $this->assertSame(ObjectionState::RESOLVED, $resolved->toState);
+    }
+
+    public function test_expert_persistence_blocks_acknowledged_to_partially_resolved(): void
+    {
+        $osm = new ObjectionStateMachine;
+        $osm->register('obj', 'VISIBLE', 50, 'Test');
+
+        $osm->processEvent(new RoleplayEvent(RoleplayEventType::OBJECTION_TRIGGERED, relatedObjectionKey: 'obj'), 85);
+        $osm->processEvent(new RoleplayEvent(RoleplayEventType::OBJECTION_ACKNOWLEDGED, relatedObjectionKey: 'obj'), 85);
+
+        $partial = $osm->processEvent(new RoleplayEvent(RoleplayEventType::OBJECTION_PARTIALLY_RESOLVED, relatedObjectionKey: 'obj'), 85);
+        $this->assertFalse($partial->accepted);
+        $this->assertSame('Objection persistence too high for transition', $partial->rejectionReason);
+        $this->assertSame(ObjectionState::ACKNOWLEDGED, $osm->getState('obj'));
+    }
+
+    public function test_difficult_persistence_blocks_resolved_but_not_partial(): void
+    {
+        $osm = new ObjectionStateMachine;
+        $osm->register('obj', 'VISIBLE', 50, 'Test');
+
+        $osm->processEvent(new RoleplayEvent(RoleplayEventType::OBJECTION_TRIGGERED, relatedObjectionKey: 'obj'), 65);
+        $osm->processEvent(new RoleplayEvent(RoleplayEventType::OBJECTION_ACKNOWLEDGED, relatedObjectionKey: 'obj'), 65);
+
+        $partial = $osm->processEvent(new RoleplayEvent(RoleplayEventType::OBJECTION_PARTIALLY_RESOLVED, relatedObjectionKey: 'obj'), 65);
+        $this->assertTrue($partial->accepted);
+        $this->assertSame(ObjectionState::PARTIALLY_RESOLVED, $partial->toState);
+
+        $resolved = $osm->processEvent(new RoleplayEvent(RoleplayEventType::OBJECTION_RESOLVED_CANDIDATE, relatedObjectionKey: 'obj'), 65);
+        $this->assertFalse($resolved->accepted);
+        $this->assertSame(ObjectionState::PARTIALLY_RESOLVED, $osm->getState('obj'));
+    }
+
+    public function test_beginner_persistence_allows_all_resolution(): void
+    {
+        $osm = new ObjectionStateMachine;
+        $osm->register('obj', 'VISIBLE', 50, 'Test');
+
+        $osm->processEvent(new RoleplayEvent(RoleplayEventType::OBJECTION_TRIGGERED, relatedObjectionKey: 'obj'), 20);
+        $osm->processEvent(new RoleplayEvent(RoleplayEventType::OBJECTION_ACKNOWLEDGED, relatedObjectionKey: 'obj'), 20);
+        $osm->processEvent(new RoleplayEvent(RoleplayEventType::OBJECTION_PARTIALLY_RESOLVED, relatedObjectionKey: 'obj'), 20);
+
+        $resolved = $osm->processEvent(new RoleplayEvent(RoleplayEventType::OBJECTION_RESOLVED_CANDIDATE, relatedObjectionKey: 'obj'), 20);
+        $this->assertTrue($resolved->accepted);
+        $this->assertSame(ObjectionState::RESOLVED, $resolved->toState);
+    }
+
+    public function test_persistence_does_not_block_non_resolution_transitions(): void
+    {
+        $osm = new ObjectionStateMachine;
+        $osm->register('obj', 'VISIBLE', 50, 'Test');
+
+        $triggered = $osm->processEvent(new RoleplayEvent(RoleplayEventType::OBJECTION_TRIGGERED, relatedObjectionKey: 'obj'), 85);
+        $this->assertTrue($triggered->accepted);
+
+        $acknowledged = $osm->processEvent(new RoleplayEvent(RoleplayEventType::OBJECTION_ACKNOWLEDGED, relatedObjectionKey: 'obj'), 85);
+        $this->assertTrue($acknowledged->accepted);
+    }
+
+    public function test_persistence_does_not_block_reactivation(): void
+    {
+        $osm = new ObjectionStateMachine;
+        $osm->register('obj', 'VISIBLE', 50, 'Test');
+
+        $osm->processEvent(new RoleplayEvent(RoleplayEventType::OBJECTION_TRIGGERED, relatedObjectionKey: 'obj'), 20);
+        $osm->processEvent(new RoleplayEvent(RoleplayEventType::OBJECTION_ACKNOWLEDGED, relatedObjectionKey: 'obj'), 20);
+        $osm->processEvent(new RoleplayEvent(RoleplayEventType::OBJECTION_PARTIALLY_RESOLVED, relatedObjectionKey: 'obj'), 20);
+        $osm->processEvent(new RoleplayEvent(RoleplayEventType::OBJECTION_RESOLVED_CANDIDATE, relatedObjectionKey: 'obj'), 20);
+
+        $reactivated = $osm->processEvent(new RoleplayEvent(RoleplayEventType::DISMISSED_CONCERN, relatedObjectionKey: 'obj'), 85);
+        $this->assertTrue($reactivated->accepted);
+        $this->assertSame(ObjectionState::REACTIVATED, $reactivated->toState);
+    }
+
     public function test_objection_transition_to_array(): void
     {
         $transition = new ObjectionTransition(
