@@ -128,18 +128,19 @@ Verification note 2026-07-06: Implemented Persona Hidden Information as a dedica
 - [x] Implement difficulty levels and Custom modifiers.
 - [x] Enforce max roleplay duration <= 900 seconds.
 - [x] Implement `allow_ai_end_call`.
-- [ ] Implement Global Rubric management.
-- [ ] Implement Scenario Rubric management.
-- [ ] Implement Scenario global-rubric weight overrides.
-- [ ] Create `RubricMerger`.
+- [x] Implement Global Rubric management.
+- [x] Implement Scenario Rubric management.
+- [x] Implement Scenario global-rubric weight overrides.
+- [x] Create `RubricMerger`.
 
 ### Phase 3 Tests
 
 - [x] mode restrictions
 - [x] persona assignment restrictions
 - [x] max duration validation
-- [ ] rubric merge
-- [ ] rubric weight override
+- [x] global rubric CRUD (16 tests)
+- [x] scenario rubric CRUD with overrides (10 tests)
+- [x] rubric merge (11 tests)
 
 Verification note 2026-07-06: Created `scenarios`, `scenario_versions`, and `scenario_personas` tables. Implemented full Scenario aggregate with immutable ScenarioVersion versioning. Added Scenario Builder UI with 8 sections (Deskripsi & Briefing, Konteks Tersembunyi, Konfigurasi Percakapan, Target & Kondisi, Kondisi Sukses & Gagal, Tingkat Kesulitan dengan CUSTOM modifiers, Mode Pemilihan Persona, Persona yang Tersedia). Enforced max_duration_seconds <= 900 via FormRequest validation. Added `allow_ai_end_call` checkbox. All 209 tests pass / 575 assertions, and `npm run build` passes. Stopping before Rubric implementation as instructed.
 
@@ -147,23 +148,23 @@ Verification note 2026-07-06: Created `scenarios`, `scenario_versions`, and `sce
 
 ## Phase 4 — Persona Salience Compiler
 
-- [ ] Create salience value objects/DTOs.
-- [ ] Implement explicit Primary/Secondary/Background override support.
-- [ ] Implement automatic salience selection.
-- [ ] Consider trait intensity.
-- [ ] Consider scenario relevance.
-- [ ] Consider difficulty.
-- [ ] Implement behavior compatibility/conflict handling.
-- [ ] Limit recommended Primary traits to 2–3.
-- [ ] Limit recommended Secondary traits to 2–3.
-- [ ] Build Admin salience preview.
+- [x] Create salience value objects/DTOs (`SalientTrait`, `SalienceResult`).
+- [x] Implement explicit Primary/Secondary/Background override support.
+- [x] Implement automatic salience selection.
+- [x] Consider trait intensity.
+- [x] Consider scenario relevance.
+- [ ] Consider difficulty (not yet wired to compiler; deferred to Phase 6 integration).
+- [x] Implement behavior compatibility/conflict handling (`CONFLICT_MAP`).
+- [x] Limit recommended Primary traits to 3 (`MAX_PRIMARY`).
+- [x] Limit recommended Secondary traits to 3 (`MAX_SECONDARY`).
+- [ ] Build Admin salience preview (optional UI, deferred).
 
 ### Phase 4 Tests
 
-- [ ] many high sliders do not all become Primary
-- [ ] scenario relevance changes salience
-- [ ] explicit override works
-- [ ] incompatible dominant traits are handled predictably
+- [x] many high sliders do not all become Primary
+- [x] scenario relevance changes salience
+- [x] explicit override works
+- [x] incompatible dominant traits are handled predictably
 
 ---
 
