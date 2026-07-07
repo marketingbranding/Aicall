@@ -258,6 +258,8 @@ Verification note 2026-07-07: Implemented DirectorSessionSummaryBuilder with Dir
 
 Verification note 2026-07-07: Wired DifficultyModifier's objectionPersistence, disclosureResistance, and boundaryPersistence into ObjectionStateMachine, HiddenInfoStateMachine, and BoundaryStateMachine. OSM: blocks ACKNOWLEDGED→PARTIALLY_RESOLVED at ≥85 persistence, blocks PARTIALLY_RESOLVED→RESOLVED at ≥65. HISM: scales trust requirement by `1 + ((disclosureResistance - 50) / 200)` factor. BSM: dynamic cooldown via `round(5 - boundaryPersistence * 0.04)` clamped 1–5. No modifier (null) uses default NORMAL (50) behavior. All 575 tests pass (1666 assertions), `npm run build` succeeds (56 modules).
 
+Verification note 2026-07-07: Created Phase 7 data model and snapshot infrastructure. Added `roleplay_sessions` and `roleplay_session_snapshots` tables with migrations. 5 enums: RoleplaySessionStatus (12 states), EndingType, TranscriptIntegrity, EvaluationStatus, PersonaMode. 6 snapshot DTOs in `app/Services/Snapshots/`: PersonaSnapshot, ScenarioSnapshot, DifficultySnapshot, RubricSnapshot, SalienceSnapshot, DirectorSnapshot. `SessionSnapshotService` orchestrates snapshot creation from domain models. Actor instructions encrypted via Laravel's `'encrypted'` cast, SHA-256 hashed. `RoleplaySession` model with lifecycle checks and scopes. `RoleplaySessionSnapshot` model with `HasOne` relationship. Factories for both models. All 588 tests pass (1727 assertions), `npm run build` succeeds (56 modules).
+
 ---
 
 ## Phase 7 — Roleplay Session Setup and Sales Flow
@@ -272,19 +274,30 @@ Verification note 2026-07-07: Wired DifficultyModifier's objectionPersistence, d
 - [ ] Build pre-call screen.
 - [ ] Implement microphone-permission UI.
 - [ ] Implement secure roleplay-session creation transaction.
-- [ ] Create Persona Snapshot.
-- [ ] Create Scenario Snapshot.
-- [ ] Create Difficulty Snapshot.
-- [ ] Create Rubric Snapshot.
-- [ ] Save Salience Snapshot.
-- [ ] Initialize Director State.
+- [x] Create Persona Snapshot (PersonaSnapshot DTO + SessionSnapshotService).
+- [x] Create Scenario Snapshot (ScenarioSnapshot DTO + SessionSnapshotService).
+- [x] Create Difficulty Snapshot (DifficultySnapshot DTO).
+- [x] Create Rubric Snapshot (RubricSnapshot DTO).
+- [x] Save Salience Snapshot (SalienceSnapshot DTO).
+- [x] Create DirectorSnapshot DTO.
+- [x] Initialize Director State (via DirectorSnapshot).
 
 ### Phase 7 Tests
 
-- [ ] hidden data absent from browser response
-- [ ] unauthorized persona cannot be selected
-- [ ] same setup creates one application session
-- [ ] snapshots are immutable
+- [x] session can be created for active Sales user
+- [x] session belongs to user
+- [x] session has snapshot
+- [x] actor instruction hash is stored
+- [x] actor instructions are encrypted in database
+- [x] actor instructions decrypt when accessed
+- [x] snapshot JSON is stored
+- [x] snapshot is one per session (UNIQUE constraint)
+- [x] session lifecycle transitions
+- [x] session toArray does not expose snapshot data
+- [ ] hidden data absent from browser response (Phase 7.2 — endpoint layer)
+- [ ] unauthorized persona cannot be selected (Phase 7.2)
+- [ ] same setup creates one application session (Phase 7.2)
+- [ ] snapshots are immutable (application-level contract, tested via factory)
 
 ---
 
