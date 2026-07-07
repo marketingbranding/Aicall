@@ -7,6 +7,7 @@ class RoleplayDirectorEngine
     private const int RECENT_MEMORY_MAX = 20;
 
     private TransitionRuleProvider $ruleProvider;
+    private DiminishingReturnCalculator $diminishingCalculator;
 
     /** @var array<string, true> */
     private array $recentFingerprints = [];
@@ -14,9 +15,12 @@ class RoleplayDirectorEngine
     /** @var string[] ordered list of recent fingerprints */
     private array $recentFingerprintOrder = [];
 
-    public function __construct(?TransitionRuleProvider $ruleProvider = null)
-    {
+    public function __construct(
+        ?TransitionRuleProvider $ruleProvider = null,
+        ?DiminishingReturnCalculator $diminishingCalculator = null,
+    ) {
         $this->ruleProvider = $ruleProvider ?? new TransitionRuleProvider();
+        $this->diminishingCalculator = $diminishingCalculator ?? new DiminishingReturnCalculator();
     }
 
     public function applyEvent(RoleplayEvent $event, DirectorState $currentState): DirectorEngineResult
@@ -34,13 +38,19 @@ class RoleplayDirectorEngine
 
         $baseTransition = $this->ruleProvider->getBaseTransition($event->type);
 
-        $newState = $currentState->apply($baseTransition);
+        $adjustedTransition = $this->diminishingCalculator->applyDiminishedTransition(
+            $event->type,
+            $baseTransition,
+        );
+
+        $newState = $currentState->apply($adjustedTransition);
 
         $this->rememberFingerprint($fingerprint);
+        $this->diminishingCalculator->record($event->type);
 
         return new DirectorEngineResult(
             state: $newState,
-            appliedTransition: $baseTransition,
+            appliedTransition: $adjustedTransition,
             accepted: true,
         );
     }
@@ -54,6 +64,7 @@ class RoleplayDirectorEngine
     {
         $this->recentFingerprints = [];
         $this->recentFingerprintOrder = [];
+        $this->diminishingCalculator->reset();
     }
 
     private function rememberFingerprint(string $fingerprint): void

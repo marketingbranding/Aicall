@@ -209,7 +209,7 @@ Verification note 2026-07-07: Created `RoleplayInstruction` (DTO with 11 typed s
 - [ ] Implement Event validation.
 - [ ] Implement Event fingerprint/deduplication.
 - [ ] Implement recent-event memory.
-- [ ] Implement diminishing returns.
+- [x] Implement diminishing returns.
 - [ ] Implement transition-rule architecture.
 - [ ] Implement core communication transition rules.
 - [ ] Implement Objection State Machine.
@@ -229,7 +229,7 @@ Verification note 2026-07-07: Created `RoleplayInstruction` (DTO with 11 typed s
 - [x] duplicate event suppression
 - [x] state-to-behavior translation (13 tests)
 - [ ] persona multiplier effects
-- [ ] diminishing returns
+- [x] diminishing returns
 - [ ] note cooldown
 - [ ] objection transitions
 - [ ] disclosure transitions
@@ -237,6 +237,8 @@ Verification note 2026-07-07: Created `RoleplayInstruction` (DTO with 11 typed s
 - [ ] AI-ending eligibility
 
 Verification note 2026-07-07: Created StateToBehaviorTranslator, StateBand enum, and BehaviorTranslationResult DTO. Translator maps 7 DirectorState vars to qualitative bands (VERY_LOW—VERY_HIGH) per spec thresholds (0-20, 21-40, 41-60, 61-80, 81-100). Generates deterministic Bahasa Indonesia qualitative text and Director Note suggestions. No AI dependency. All 311 tests pass (931 assertions), `npm run build` succeeds (56 modules).
+
+Verification note 2026-07-07: Implemented diminishing returns via DiminishingReturnCalculator. Tracks event type frequency in 20-entry ring buffer. Positive event deltas (trust/interest/engagement gains, confusion/anxiety/irritation/pressure reductions) are multiplied by 1.0 → 0.5 → 0.25 → 0.0 on repeat occurrences. Negative/harmful deltas are never softened. Integrated into RoleplayDirectorEngine alongside existing fingerprint dedup. All 327 tests pass (975 assertions), `npm run build` succeeds (56 modules).
 
 ---
 

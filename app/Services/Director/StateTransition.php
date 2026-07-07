@@ -14,6 +14,19 @@ readonly class StateTransition
         public int $engagementDelta = 0,
     ) {}
 
+    public function withPositiveDiminishing(float $multiplier): self
+    {
+        return new self(
+            trustDelta: $this->trustDelta > 0 ? (int)round($this->trustDelta * $multiplier) : $this->trustDelta,
+            interestDelta: $this->interestDelta > 0 ? (int)round($this->interestDelta * $multiplier) : $this->interestDelta,
+            confusionDelta: $this->confusionDelta < 0 ? (int)round($this->confusionDelta * $multiplier) : $this->confusionDelta,
+            anxietyDelta: $this->anxietyDelta < 0 ? (int)round($this->anxietyDelta * $multiplier) : $this->anxietyDelta,
+            irritationDelta: $this->irritationDelta < 0 ? (int)round($this->irritationDelta * $multiplier) : $this->irritationDelta,
+            pressurePerceptionDelta: $this->pressurePerceptionDelta < 0 ? (int)round($this->pressurePerceptionDelta * $multiplier) : $this->pressurePerceptionDelta,
+            engagementDelta: $this->engagementDelta > 0 ? (int)round($this->engagementDelta * $multiplier) : $this->engagementDelta,
+        );
+    }
+
     public function toArray(): array
     {
         return array_filter([
