@@ -204,7 +204,7 @@ Verification note 2026-07-07: Created `RoleplayInstruction` (DTO with 11 typed s
 
 - [ ] Create `RoleplayDirectorEngine` domain module.
 - [ ] Implement bounded Dynamic State.
-- [ ] Implement State-to-Behavior Translator.
+- [x] Implement State-to-Behavior Translator.
 - [ ] Implement normalized Event taxonomy.
 - [ ] Implement Event validation.
 - [ ] Implement Event fingerprint/deduplication.
@@ -224,15 +224,19 @@ Verification note 2026-07-07: Created `RoleplayInstruction` (DTO with 11 typed s
 
 ### Phase 6 Tests
 
-- [ ] state clamp
+- [x] state clamp (DirectorState)
+- [x] normalized event taxonomy (29 event types)
+- [x] duplicate event suppression
+- [x] state-to-behavior translation (13 tests)
 - [ ] persona multiplier effects
 - [ ] diminishing returns
-- [ ] duplicate event suppression
 - [ ] note cooldown
 - [ ] objection transitions
 - [ ] disclosure transitions
 - [ ] boundary transitions
 - [ ] AI-ending eligibility
+
+Verification note 2026-07-07: Created StateToBehaviorTranslator, StateBand enum, and BehaviorTranslationResult DTO. Translator maps 7 DirectorState vars to qualitative bands (VERY_LOW—VERY_HIGH) per spec thresholds (0-20, 21-40, 41-60, 61-80, 81-100). Generates deterministic Bahasa Indonesia qualitative text and Director Note suggestions. No AI dependency. All 311 tests pass (931 assertions), `npm run build` succeeds (56 modules).
 
 ---
 
