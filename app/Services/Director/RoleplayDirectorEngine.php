@@ -8,6 +8,7 @@ class RoleplayDirectorEngine
 
     private TransitionRuleProvider $ruleProvider;
     private DiminishingReturnCalculator $diminishingCalculator;
+    private ?ObjectionStateMachine $objectionStateMachine;
 
     /** @var array<string, true> */
     private array $recentFingerprints = [];
@@ -18,9 +19,11 @@ class RoleplayDirectorEngine
     public function __construct(
         ?TransitionRuleProvider $ruleProvider = null,
         ?DiminishingReturnCalculator $diminishingCalculator = null,
+        ?ObjectionStateMachine $objectionStateMachine = null,
     ) {
         $this->ruleProvider = $ruleProvider ?? new TransitionRuleProvider();
         $this->diminishingCalculator = $diminishingCalculator ?? new DiminishingReturnCalculator();
+        $this->objectionStateMachine = $objectionStateMachine;
     }
 
     public function applyEvent(RoleplayEvent $event, DirectorState $currentState): DirectorEngineResult
@@ -45,6 +48,14 @@ class RoleplayDirectorEngine
 
         $newState = $currentState->apply($adjustedTransition);
 
+        $objectionTransitions = [];
+        if ($this->objectionStateMachine !== null) {
+            $transition = $this->objectionStateMachine->processEvent($event);
+            if ($transition !== null) {
+                $objectionTransitions[] = $transition;
+            }
+        }
+
         $this->rememberFingerprint($fingerprint);
         $this->diminishingCalculator->record($event->type);
 
@@ -52,6 +63,7 @@ class RoleplayDirectorEngine
             state: $newState,
             appliedTransition: $adjustedTransition,
             accepted: true,
+            objectionTransitions: $objectionTransitions,
         );
     }
 
@@ -65,6 +77,7 @@ class RoleplayDirectorEngine
         $this->recentFingerprints = [];
         $this->recentFingerprintOrder = [];
         $this->diminishingCalculator->reset();
+        $this->objectionStateMachine?->reset();
     }
 
     private function rememberFingerprint(string $fingerprint): void
