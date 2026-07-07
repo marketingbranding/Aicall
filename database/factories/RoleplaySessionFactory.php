@@ -32,6 +32,8 @@ class RoleplaySessionFactory extends Factory
             'transcript_integrity' => null,
             'evaluation_status' => null,
             'director_version' => 1,
+            'idempotency_key' => null,
+            'idempotency_fingerprint' => null,
         ];
     }
 

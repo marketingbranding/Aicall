@@ -50,6 +50,7 @@
 
                         <form method="POST" action="{{ route('training.scenarios.sessions.store', $scenario) }}" class="space-y-4">
                             @csrf
+                            <input type="hidden" name="idempotency_key" value="{{ $idempotencyKey }}">
 
                             @if ($errors->any())
                                 <div class="p-4 bg-red-50 border border-red-200 rounded-lg text-sm text-red-700">

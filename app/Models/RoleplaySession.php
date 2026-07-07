@@ -35,6 +35,8 @@ class RoleplaySession extends Model
         'transcript_integrity',
         'evaluation_status',
         'director_version',
+        'idempotency_key',
+        'idempotency_fingerprint',
     ];
 
     protected function casts(): array

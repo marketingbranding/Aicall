@@ -10,6 +10,7 @@ use App\Models\Scenario;
 use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Str;
 use Tests\TestCase;
 
 class TrainingBriefingTest extends TestCase
@@ -233,10 +234,10 @@ class TrainingBriefingTest extends TestCase
         ])->create();
         $persona = $this->createAssignedPersona($scenario, $user, 'Persona Pilihan');
 
-        $response = $this->actingAs($user)->post(route('training.scenarios.sessions.store', $scenario), [
+        $response = $this->actingAs($user)->post(route('training.scenarios.sessions.store', $scenario), $this->sessionPayload([
             'persona_mode' => PersonaMode::CHOOSE_PERSONA->value,
             'persona_id' => $persona->id,
-        ]);
+        ]));
 
         $session = RoleplaySession::first();
         $response->assertRedirect(route('training.sessions.prepare', $session->public_id, absolute: false));
@@ -256,10 +257,10 @@ class TrainingBriefingTest extends TestCase
         ])->create();
         $unassignedPersona = $this->createPersona($user, 'Persona Tidak Ditugaskan');
 
-        $response = $this->actingAs($user)->from(route('training.scenarios.briefing', $scenario))->post(route('training.scenarios.sessions.store', $scenario), [
+        $response = $this->actingAs($user)->from(route('training.scenarios.briefing', $scenario))->post(route('training.scenarios.sessions.store', $scenario), $this->sessionPayload([
             'persona_mode' => PersonaMode::CHOOSE_PERSONA->value,
             'persona_id' => $unassignedPersona->id,
-        ]);
+        ]));
 
         $response->assertRedirect(route('training.scenarios.briefing', $scenario, absolute: false));
         $response->assertSessionHasErrors('persona_id');
@@ -275,9 +276,9 @@ class TrainingBriefingTest extends TestCase
         ])->create();
         $persona = $this->createAssignedPersona($scenario, $user, 'Persona Acak');
 
-        $response = $this->actingAs($user)->post(route('training.scenarios.sessions.store', $scenario), [
+        $response = $this->actingAs($user)->post(route('training.scenarios.sessions.store', $scenario), $this->sessionPayload([
             'persona_mode' => PersonaMode::RANDOM_PERSONA->value,
-        ]);
+        ]));
 
         $session = RoleplaySession::first();
         $response->assertRedirect(route('training.sessions.prepare', $session->public_id, absolute: false));
@@ -297,9 +298,9 @@ class TrainingBriefingTest extends TestCase
             'human_behavior_traits_json' => ['interrupting_tendency' => 90],
         ]);
 
-        $response = $this->actingAs($user)->followingRedirects()->post(route('training.scenarios.sessions.store', $scenario), [
+        $response = $this->actingAs($user)->followingRedirects()->post(route('training.scenarios.sessions.store', $scenario), $this->sessionPayload([
             'persona_mode' => PersonaMode::HIDDEN_PERSONA->value,
-        ]);
+        ]));
 
         $response->assertOk();
         $response->assertSee('Sesi latihan berhasil dibuat');
@@ -318,9 +319,9 @@ class TrainingBriefingTest extends TestCase
             'allowed_persona_modes_json' => [PersonaMode::CHOOSE_PERSONA->value],
         ])->create();
 
-        $response = $this->actingAs($user)->from(route('training.scenarios.briefing', $scenario))->post(route('training.scenarios.sessions.store', $scenario), [
+        $response = $this->actingAs($user)->from(route('training.scenarios.briefing', $scenario))->post(route('training.scenarios.sessions.store', $scenario), $this->sessionPayload([
             'persona_mode' => PersonaMode::RANDOM_PERSONA->value,
-        ]);
+        ]));
 
         $response->assertRedirect(route('training.scenarios.briefing', $scenario, absolute: false));
         $response->assertSessionHasErrors('persona_mode');
@@ -336,13 +337,13 @@ class TrainingBriefingTest extends TestCase
         $pending = User::factory()->sales()->pendingApproval()->create();
         $suspended = User::factory()->sales()->suspended()->create();
 
-        $this->actingAs($pending)->post(route('training.scenarios.sessions.store', $scenario), [
+        $this->actingAs($pending)->post(route('training.scenarios.sessions.store', $scenario), $this->sessionPayload([
             'persona_mode' => PersonaMode::RANDOM_PERSONA->value,
-        ])->assertRedirect(route('account.pending', absolute: false));
+        ]))->assertRedirect(route('account.pending', absolute: false));
 
-        $this->actingAs($suspended)->post(route('training.scenarios.sessions.store', $scenario), [
+        $this->actingAs($suspended)->post(route('training.scenarios.sessions.store', $scenario), $this->sessionPayload([
             'persona_mode' => PersonaMode::RANDOM_PERSONA->value,
-        ])->assertRedirect(route('account.suspended', absolute: false));
+        ]))->assertRedirect(route('account.suspended', absolute: false));
 
         $this->assertDatabaseCount('roleplay_sessions', 0);
     }
@@ -355,9 +356,9 @@ class TrainingBriefingTest extends TestCase
         ])->create();
         $this->createAssignedPersona($scenario, $user);
 
-        $this->actingAs($user)->post(route('training.scenarios.sessions.store', $scenario), [
+        $this->actingAs($user)->post(route('training.scenarios.sessions.store', $scenario), $this->sessionPayload([
             'persona_mode' => PersonaMode::RANDOM_PERSONA->value,
-        ]);
+        ]));
 
         $this->assertDatabaseCount('roleplay_sessions', 1);
         $this->assertDatabaseCount('roleplay_session_snapshots', 1);
@@ -372,9 +373,9 @@ class TrainingBriefingTest extends TestCase
         ])->create();
         $this->createAssignedPersona($scenario, $user);
 
-        $this->actingAs($user)->post(route('training.scenarios.sessions.store', $scenario), [
+        $this->actingAs($user)->post(route('training.scenarios.sessions.store', $scenario), $this->sessionPayload([
             'persona_mode' => PersonaMode::RANDOM_PERSONA->value,
-        ]);
+        ]));
 
         $hash = RoleplaySessionSnapshot::first()->actor_instruction_hash;
         $this->assertSame(64, strlen($hash));
@@ -389,9 +390,9 @@ class TrainingBriefingTest extends TestCase
         ])->create();
         $this->createAssignedPersona($scenario, $user);
 
-        $this->actingAs($user)->post(route('training.scenarios.sessions.store', $scenario), [
+        $this->actingAs($user)->post(route('training.scenarios.sessions.store', $scenario), $this->sessionPayload([
             'persona_mode' => PersonaMode::RANDOM_PERSONA->value,
-        ]);
+        ]));
 
         $snapshot = RoleplaySessionSnapshot::first();
         $raw = DB::table('roleplay_session_snapshots')->where('id', $snapshot->id)->value('actor_instructions');
@@ -415,9 +416,9 @@ class TrainingBriefingTest extends TestCase
             'human_behavior_traits_json' => ['dominance' => 88],
         ]);
 
-        $response = $this->actingAs($user)->followingRedirects()->post(route('training.scenarios.sessions.store', $scenario), [
+        $response = $this->actingAs($user)->followingRedirects()->post(route('training.scenarios.sessions.store', $scenario), $this->sessionPayload([
             'persona_mode' => PersonaMode::HIDDEN_PERSONA->value,
-        ]);
+        ]));
 
         $response->assertOk();
         $response->assertDontSee('konteks internal tidak tampil');
@@ -430,6 +431,123 @@ class TrainingBriefingTest extends TestCase
         $response->assertDontSee('director_snapshot');
     }
 
+    public function test_duplicate_choose_persona_submit_creates_only_one_session_and_redirects_same_session(): void
+    {
+        $user = User::factory()->sales()->active()->create();
+        $scenario = Scenario::factory()->withVersion([
+            'allowed_persona_modes_json' => [PersonaMode::CHOOSE_PERSONA->value],
+        ])->create();
+        $persona = $this->createAssignedPersona($scenario, $user);
+        $key = (string) Str::uuid();
+        $payload = $this->sessionPayload([
+            'persona_mode' => PersonaMode::CHOOSE_PERSONA->value,
+            'persona_id' => $persona->id,
+        ], $key);
+
+        $first = $this->actingAs($user)->post(route('training.scenarios.sessions.store', $scenario), $payload);
+        $session = RoleplaySession::first();
+        $second = $this->actingAs($user)->post(route('training.scenarios.sessions.store', $scenario), $payload);
+
+        $first->assertRedirect(route('training.sessions.prepare', $session->public_id, absolute: false));
+        $second->assertRedirect(route('training.sessions.prepare', $session->public_id, absolute: false));
+        $this->assertDatabaseCount('roleplay_sessions', 1);
+        $this->assertDatabaseCount('roleplay_session_snapshots', 1);
+    }
+
+    public function test_duplicate_random_persona_submit_creates_only_one_session(): void
+    {
+        $user = User::factory()->sales()->active()->create();
+        $scenario = Scenario::factory()->withVersion([
+            'allowed_persona_modes_json' => [PersonaMode::RANDOM_PERSONA->value],
+        ])->create();
+        $this->createAssignedPersona($scenario, $user, 'Persona A');
+        $this->createAssignedPersona($scenario, $user, 'Persona B');
+        $payload = $this->sessionPayload([
+            'persona_mode' => PersonaMode::RANDOM_PERSONA->value,
+        ], (string) Str::uuid());
+
+        $this->actingAs($user)->post(route('training.scenarios.sessions.store', $scenario), $payload);
+        $firstSession = RoleplaySession::first();
+        $second = $this->actingAs($user)->post(route('training.scenarios.sessions.store', $scenario), $payload);
+
+        $second->assertRedirect(route('training.sessions.prepare', $firstSession->public_id, absolute: false));
+        $this->assertDatabaseCount('roleplay_sessions', 1);
+        $this->assertDatabaseCount('roleplay_session_snapshots', 1);
+    }
+
+    public function test_duplicate_hidden_persona_submit_creates_only_one_session(): void
+    {
+        $user = User::factory()->sales()->active()->create();
+        $scenario = Scenario::factory()->withVersion([
+            'allowed_persona_modes_json' => [PersonaMode::HIDDEN_PERSONA->value],
+        ])->create();
+        $this->createAssignedPersona($scenario, $user, 'Persona Tersembunyi A');
+        $this->createAssignedPersona($scenario, $user, 'Persona Tersembunyi B');
+        $payload = $this->sessionPayload([
+            'persona_mode' => PersonaMode::HIDDEN_PERSONA->value,
+        ], (string) Str::uuid());
+
+        $this->actingAs($user)->post(route('training.scenarios.sessions.store', $scenario), $payload);
+        $firstSession = RoleplaySession::first();
+        $second = $this->actingAs($user)->post(route('training.scenarios.sessions.store', $scenario), $payload);
+
+        $second->assertRedirect(route('training.sessions.prepare', $firstSession->public_id, absolute: false));
+        $this->assertDatabaseCount('roleplay_sessions', 1);
+        $this->assertDatabaseCount('roleplay_session_snapshots', 1);
+    }
+
+    public function test_different_idempotency_key_creates_new_session(): void
+    {
+        $user = User::factory()->sales()->active()->create();
+        $scenario = Scenario::factory()->withVersion([
+            'allowed_persona_modes_json' => [PersonaMode::RANDOM_PERSONA->value],
+        ])->create();
+        $this->createAssignedPersona($scenario, $user);
+
+        $this->actingAs($user)->post(route('training.scenarios.sessions.store', $scenario), $this->sessionPayload([
+            'persona_mode' => PersonaMode::RANDOM_PERSONA->value,
+        ], (string) Str::uuid()));
+        $this->actingAs($user)->post(route('training.scenarios.sessions.store', $scenario), $this->sessionPayload([
+            'persona_mode' => PersonaMode::RANDOM_PERSONA->value,
+        ], (string) Str::uuid()));
+
+        $this->assertDatabaseCount('roleplay_sessions', 2);
+        $this->assertDatabaseCount('roleplay_session_snapshots', 2);
+    }
+
+    public function test_pending_and_suspended_users_still_blocked_with_idempotency_key(): void
+    {
+        $scenario = Scenario::factory()->withVersion([
+            'allowed_persona_modes_json' => [PersonaMode::RANDOM_PERSONA->value],
+        ])->create();
+
+        $pending = User::factory()->sales()->pendingApproval()->create();
+        $suspended = User::factory()->sales()->suspended()->create();
+
+        $this->actingAs($pending)->post(route('training.scenarios.sessions.store', $scenario), $this->sessionPayload([
+            'persona_mode' => PersonaMode::RANDOM_PERSONA->value,
+        ], (string) Str::uuid()))->assertRedirect(route('account.pending', absolute: false));
+
+        $this->actingAs($suspended)->post(route('training.scenarios.sessions.store', $scenario), $this->sessionPayload([
+            'persona_mode' => PersonaMode::RANDOM_PERSONA->value,
+        ], (string) Str::uuid()))->assertRedirect(route('account.suspended', absolute: false));
+
+        $this->assertDatabaseCount('roleplay_sessions', 0);
+    }
+
+    public function test_briefing_form_includes_generated_idempotency_token(): void
+    {
+        $user = User::factory()->sales()->active()->create();
+        $scenario = Scenario::factory()->withVersion([
+            'allowed_persona_modes_json' => [PersonaMode::RANDOM_PERSONA->value],
+        ])->create();
+
+        $response = $this->actingAs($user)->get(route('training.scenarios.briefing', $scenario));
+
+        $response->assertOk();
+        $response->assertSee('name="idempotency_key"', false);
+    }
+
     private function createAssignedPersona(Scenario $scenario, User $user, string $name = 'Persona Aktif', array $versionData = []): Persona
     {
         $persona = $this->createPersona($user, $name, $versionData);
@@ -440,6 +558,13 @@ class TrainingBriefingTest extends TestCase
         ]);
 
         return $persona;
+    }
+
+    private function sessionPayload(array $payload, ?string $key = null): array
+    {
+        return array_merge([
+            'idempotency_key' => $key ?? (string) Str::uuid(),
+        ], $payload);
     }
 
     private function createPersona(User $user, string $name = 'Persona Aktif', array $versionData = []): Persona
