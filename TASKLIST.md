@@ -217,7 +217,7 @@ Verification note 2026-07-07: Created `RoleplayInstruction` (DTO with 11 typed s
 - [x] Implement Boundary State Machine.
 - [x] Implement Conversation Phase Manager.
 - [ ] Implement Difficulty modifiers.
-- [ ] Implement Director Note Planner.
+- [x] Implement Director Note Planner.
 - [ ] Implement Director Note cooldown and duplicate suppression.
 - [ ] Implement AI-ending eligibility.
 - [ ] Implement Director Session Summary Builder.
@@ -247,6 +247,8 @@ Verification note 2026-07-07: Implemented HiddenInfoStateMachine with HiddenInfo
 Verification note 2026-07-07: Implemented BoundaryStateMachine with BoundaryState enum (9 states: NOT_TESTED, MILD_TEST_OCCURRED, SALESPERSON_PARTICIPATED, INDIRECTLY_REDIRECTED, CLEAR_BOUNDARY_ESTABLISHED, CUSTOMER_RESPECTED_BOUNDARY, CUSTOMER_RETESTED_BOUNDARY, SIGNIFICANT_VIOLATION, PROFESSIONAL_TERMINATION_ELIGIBLE) and BoundaryTransition DTO. Transition rules for all 8 boundary event types (CUSTOMER_BOUNDARY_TEST, SALESPERSON_PARTICIPATED_PERSONALLY, INDIRECT_REDIRECTION, CLEAR_PROFESSIONAL_REDIRECTION, EXPLICIT_BOUNDARY_SET, CUSTOMER_RESPECTED_BOUNDARY, CUSTOMER_REPEATED_BOUNDARY_TEST, SIGNIFICANT_BOUNDARY_VIOLATION). Cooldown repeat protection prevents same boundary test type within 3 events. Persona parameters (respect_for_boundaries, persistence_after_redirection) influence Director Notes. Integrated into RoleplayDirectorEngine via injectable `?BoundaryStateMachine`. DirectorEngineResult includes `boundaryTransitions`. All 407 tests pass (1216 assertions), `npm run build` succeeds (56 modules).
 
 Verification note 2026-07-07: Implemented ConversationPhaseManager with ConversationPhase enum (9 phases: OPENING, RAPPORT, DISCOVERY, NEED_EXPLORATION, EXPLANATION, OBJECTION_HANDLING, COMMITMENT, CLOSING, ENDING) and ConversationPhaseTransition DTO. Non-linear phase transitions driven by RoleplayEventType. Forward progression: OPENING→RAPPORT/DISCOVERY, RAPPORT→DISCOVERY/EXPLANATION/OBJECTION_HANDLING, DISCOVERY→NEED_EXPLORATION, NEED_EXPLORATION→EXPLANATION, EXPLANATION→COMMITMENT/OBJECTION_HANDLING, OBJECTION_HANDLING→COMMITMENT, COMMITMENT→CLOSING, CLOSING→ENDING. Backward from EXPLANATION/OBJECTION_HANDLING/COMMITMENT/CLOSING to DISCOVERY when new concerns arise. Premature closing detection via `isPrematureClosingEvent()` for AGGRESSIVE_CLOSING in early phases (OPENING—NEED_EXPLORATION). Configurable initial phase. Integrated into RoleplayDirectorEngine. All 437 tests pass (1308 assertions), `npm run build` succeeds (56 modules).
+
+Verification note 2026-07-07: Implemented DirectorNotePlanner with DirectorNote DTO. Planner consumes DirectorState (prev+new), BehaviorTranslationResult, objection/hidden-info/boundary/phase transitions. Generates notes for: objection transitions with directorNote, hidden info transitions with directorNote, boundary transitions with directorNote, phase changes (with 14 pre-mapped phase pairs + fallback), premature closing, and state threshold crossings (trust ≤30/≥70, irritation ≥60, engagement ≤30/≥70, confusion ≥60, pressure ≥60, anxiety ≥70 — only when newly crossed). Notes are qualitative Bahasa Indonesia, never expose numeric state. Deterministic output. All 490 tests pass (1467 assertions), `npm run build` succeeds (56 modules).
 
 ---
 
