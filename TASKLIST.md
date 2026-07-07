@@ -215,7 +215,7 @@ Verification note 2026-07-07: Created `RoleplayInstruction` (DTO with 11 typed s
 - [x] Implement Objection State Machine.
 - [x] Implement Hidden Information State Machine.
 - [x] Implement Boundary State Machine.
-- [ ] Implement Conversation Phase Manager.
+- [x] Implement Conversation Phase Manager.
 - [ ] Implement Difficulty modifiers.
 - [ ] Implement Director Note Planner.
 - [ ] Implement Director Note cooldown and duplicate suppression.
@@ -245,6 +245,8 @@ Verification note 2026-07-07: Implemented ObjectionStateMachine with ObjectionSt
 Verification note 2026-07-07: Implemented HiddenInfoStateMachine with HiddenInfoState enum (4 states: LOCKED, ELIGIBLE, DISCLOSED_PARTIAL, DISCLOSED_FULL) and HiddenInfoTransition DTO. State transitions consider trust_requirement, sensitivity, direct_question_effectiveness, relevant_topics, and event type. Trigger events: RELEVANT_FOLLOW_UP, EMPATHIC_RESPONSE, CLEAR_EXPLANATION, TRUST_SIGNAL, CONCERN_DISCOVERED, APPROPRIATE_NEXT_STEP. Integrated into RoleplayDirectorEngine via injectable `?HiddenInfoStateMachine`. DirectorEngineResult includes `hiddenInfoTransitions`. All 377 tests pass (1132 assertions), `npm run build` succeeds (56 modules).
 
 Verification note 2026-07-07: Implemented BoundaryStateMachine with BoundaryState enum (9 states: NOT_TESTED, MILD_TEST_OCCURRED, SALESPERSON_PARTICIPATED, INDIRECTLY_REDIRECTED, CLEAR_BOUNDARY_ESTABLISHED, CUSTOMER_RESPECTED_BOUNDARY, CUSTOMER_RETESTED_BOUNDARY, SIGNIFICANT_VIOLATION, PROFESSIONAL_TERMINATION_ELIGIBLE) and BoundaryTransition DTO. Transition rules for all 8 boundary event types (CUSTOMER_BOUNDARY_TEST, SALESPERSON_PARTICIPATED_PERSONALLY, INDIRECT_REDIRECTION, CLEAR_PROFESSIONAL_REDIRECTION, EXPLICIT_BOUNDARY_SET, CUSTOMER_RESPECTED_BOUNDARY, CUSTOMER_REPEATED_BOUNDARY_TEST, SIGNIFICANT_BOUNDARY_VIOLATION). Cooldown repeat protection prevents same boundary test type within 3 events. Persona parameters (respect_for_boundaries, persistence_after_redirection) influence Director Notes. Integrated into RoleplayDirectorEngine via injectable `?BoundaryStateMachine`. DirectorEngineResult includes `boundaryTransitions`. All 407 tests pass (1216 assertions), `npm run build` succeeds (56 modules).
+
+Verification note 2026-07-07: Implemented ConversationPhaseManager with ConversationPhase enum (9 phases: OPENING, RAPPORT, DISCOVERY, NEED_EXPLORATION, EXPLANATION, OBJECTION_HANDLING, COMMITMENT, CLOSING, ENDING) and ConversationPhaseTransition DTO. Non-linear phase transitions driven by RoleplayEventType. Forward progression: OPENING→RAPPORT/DISCOVERY, RAPPORT→DISCOVERY/EXPLANATION/OBJECTION_HANDLING, DISCOVERY→NEED_EXPLORATION, NEED_EXPLORATION→EXPLANATION, EXPLANATION→COMMITMENT/OBJECTION_HANDLING, OBJECTION_HANDLING→COMMITMENT, COMMITMENT→CLOSING, CLOSING→ENDING. Backward from EXPLANATION/OBJECTION_HANDLING/COMMITMENT/CLOSING to DISCOVERY when new concerns arise. Premature closing detection via `isPrematureClosingEvent()` for AGGRESSIVE_CLOSING in early phases (OPENING—NEED_EXPLORATION). Configurable initial phase. Integrated into RoleplayDirectorEngine. All 437 tests pass (1308 assertions), `npm run build` succeeds (56 modules).
 
 ---
 

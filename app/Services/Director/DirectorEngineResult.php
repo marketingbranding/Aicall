@@ -13,6 +13,9 @@ readonly class DirectorEngineResult
     /** @var BoundaryTransition[] */
     public array $boundaryTransitions;
 
+    /** @var ConversationPhaseTransition[] */
+    public array $phaseTransitions;
+
     public function __construct(
         public DirectorState $state,
         public StateTransition $appliedTransition,
@@ -21,10 +24,12 @@ readonly class DirectorEngineResult
         ?array $objectionTransitions = null,
         ?array $hiddenInfoTransitions = null,
         ?array $boundaryTransitions = null,
+        ?array $phaseTransitions = null,
     ) {
         $this->objectionTransitions = $objectionTransitions ?? [];
         $this->hiddenInfoTransitions = $hiddenInfoTransitions ?? [];
         $this->boundaryTransitions = $boundaryTransitions ?? [];
+        $this->phaseTransitions = $phaseTransitions ?? [];
     }
 
     public function toArray(): array
@@ -45,6 +50,10 @@ readonly class DirectorEngineResult
             'boundary_transitions' => array_map(
                 fn(BoundaryTransition $t) => $t->toArray(),
                 $this->boundaryTransitions,
+            ),
+            'phase_transitions' => array_map(
+                fn(ConversationPhaseTransition $t) => $t->toArray(),
+                $this->phaseTransitions,
             ),
         ];
     }

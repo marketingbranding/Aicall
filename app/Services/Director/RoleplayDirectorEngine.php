@@ -11,6 +11,7 @@ class RoleplayDirectorEngine
     private ?ObjectionStateMachine $objectionStateMachine;
     private ?HiddenInfoStateMachine $hiddenInfoStateMachine;
     private ?BoundaryStateMachine $boundaryStateMachine;
+    private ?ConversationPhaseManager $phaseManager;
 
     /** @var array<string, true> */
     private array $recentFingerprints = [];
@@ -24,12 +25,14 @@ class RoleplayDirectorEngine
         ?ObjectionStateMachine $objectionStateMachine = null,
         ?HiddenInfoStateMachine $hiddenInfoStateMachine = null,
         ?BoundaryStateMachine $boundaryStateMachine = null,
+        ?ConversationPhaseManager $phaseManager = null,
     ) {
         $this->ruleProvider = $ruleProvider ?? new TransitionRuleProvider();
         $this->diminishingCalculator = $diminishingCalculator ?? new DiminishingReturnCalculator();
         $this->objectionStateMachine = $objectionStateMachine;
         $this->hiddenInfoStateMachine = $hiddenInfoStateMachine;
         $this->boundaryStateMachine = $boundaryStateMachine;
+        $this->phaseManager = $phaseManager;
     }
 
     public function applyEvent(RoleplayEvent $event, DirectorState $currentState): DirectorEngineResult
@@ -78,6 +81,14 @@ class RoleplayDirectorEngine
             }
         }
 
+        $phaseTransitions = [];
+        if ($this->phaseManager !== null) {
+            $pt = $this->phaseManager->processEvent($event);
+            if ($pt !== null) {
+                $phaseTransitions[] = $pt;
+            }
+        }
+
         $this->rememberFingerprint($fingerprint);
         $this->diminishingCalculator->record($event->type);
 
@@ -88,6 +99,7 @@ class RoleplayDirectorEngine
             objectionTransitions: $objectionTransitions,
             hiddenInfoTransitions: $hiddenInfoTransitions,
             boundaryTransitions: $boundaryTransitions,
+            phaseTransitions: $phaseTransitions,
         );
     }
 
@@ -104,6 +116,7 @@ class RoleplayDirectorEngine
         $this->objectionStateMachine?->reset();
         $this->hiddenInfoStateMachine?->reset();
         $this->boundaryStateMachine?->reset();
+        $this->phaseManager?->reset();
     }
 
     private function rememberFingerprint(string $fingerprint): void
