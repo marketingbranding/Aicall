@@ -25,9 +25,13 @@ Route::get('/dashboard', function () {
     return view('dashboard');
 })->middleware(['auth', 'verified', 'account.active'])->name('dashboard');
 
-Route::get('/training', [\App\Http\Controllers\DashboardController::class, 'index'])
-    ->middleware(['auth', 'verified', 'account.active'])
-    ->name('training.dashboard');
+Route::middleware(['auth', 'verified', 'account.active'])->prefix('training')->name('training.')->group(function () {
+    Route::get('/', [\App\Http\Controllers\DashboardController::class, 'index'])
+        ->name('dashboard');
+
+    Route::get('/scenarios/{scenario}', [\App\Http\Controllers\TrainingScenarioController::class, 'briefing'])
+        ->name('scenarios.briefing');
+});
 
 Route::middleware(['auth', 'hq'])->prefix('hq')->name('hq.')->group(function () {
     Route::get('/users/pending', [\App\Http\Controllers\Hq\UserController::class, 'index'])
