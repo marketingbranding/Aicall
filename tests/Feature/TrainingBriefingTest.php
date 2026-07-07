@@ -548,6 +548,114 @@ class TrainingBriefingTest extends TestCase
         $response->assertSee('name="idempotency_key"', false);
     }
 
+    public function test_active_sales_can_view_own_prepare_page(): void
+    {
+        $user = User::factory()->sales()->active()->create();
+        $session = RoleplaySession::factory()->forUser($user)->create();
+        RoleplaySessionSnapshot::factory()->create([
+            'roleplay_session_id' => $session->id,
+            'scenario_snapshot_json' => array_merge(
+                RoleplaySessionSnapshot::factory()->definition()['scenario_snapshot_json'],
+                ['name' => 'Latihan KPR Aman'],
+            ),
+        ]);
+
+        $response = $this->actingAs($user)->get(route('training.sessions.prepare', $session->public_id));
+
+        $response->assertOk();
+        $response->assertViewIs('training.prepare');
+        $response->assertSee('Latihan KPR Aman');
+        $response->assertSee($session->public_id);
+    }
+
+    public function test_sales_cannot_view_another_users_prepare_page(): void
+    {
+        $owner = User::factory()->sales()->active()->create();
+        $otherUser = User::factory()->sales()->active()->create();
+        $session = RoleplaySession::factory()->forUser($owner)->create();
+        RoleplaySessionSnapshot::factory()->create(['roleplay_session_id' => $session->id]);
+
+        $response = $this->actingAs($otherUser)->get(route('training.sessions.prepare', $session->public_id));
+
+        $response->assertNotFound();
+    }
+
+    public function test_pending_and_suspended_users_cannot_view_prepare_page(): void
+    {
+        $pending = User::factory()->sales()->pendingApproval()->create();
+        $suspended = User::factory()->sales()->suspended()->create();
+        $pendingSession = RoleplaySession::factory()->forUser($pending)->create();
+        $suspendedSession = RoleplaySession::factory()->forUser($suspended)->create();
+
+        $this->actingAs($pending)
+            ->get(route('training.sessions.prepare', $pendingSession->public_id))
+            ->assertRedirect(route('account.pending', absolute: false));
+
+        $this->actingAs($suspended)
+            ->get(route('training.sessions.prepare', $suspendedSession->public_id))
+            ->assertRedirect(route('account.suspended', absolute: false));
+    }
+
+    public function test_prepare_page_does_not_expose_hidden_persona_details(): void
+    {
+        $user = User::factory()->sales()->active()->create();
+        $session = RoleplaySession::factory()->forUser($user)->create([
+            'persona_mode' => PersonaMode::HIDDEN_PERSONA->value,
+            'persona_id' => 'PERSONA_RAHASIA',
+        ]);
+        RoleplaySessionSnapshot::factory()->create([
+            'roleplay_session_id' => $session->id,
+            'persona_snapshot_json' => array_merge(
+                RoleplaySessionSnapshot::factory()->definition()['persona_snapshot_json'],
+                [
+                    'name' => 'Nama Persona Rahasia',
+                    'human_behavior_traits' => ['dominance' => 90],
+                    'hidden_information' => [['information' => 'Info rahasia keluarga']],
+                ],
+            ),
+        ]);
+
+        $response = $this->actingAs($user)->get(route('training.sessions.prepare', $session->public_id));
+
+        $response->assertOk();
+        $response->assertDontSee('Nama Persona Rahasia');
+        $response->assertDontSee('PERSONA_RAHASIA');
+        $response->assertDontSee('dominance');
+        $response->assertDontSee('Info rahasia keluarga');
+    }
+
+    public function test_prepare_page_does_not_expose_actor_instructions(): void
+    {
+        $user = User::factory()->sales()->active()->create();
+        $session = RoleplaySession::factory()->forUser($user)->create();
+        RoleplaySessionSnapshot::factory()->create([
+            'roleplay_session_id' => $session->id,
+            'actor_instructions' => "=== AKTOR PERSONA ===\nInstruksi internal rahasia.",
+        ]);
+
+        $response = $this->actingAs($user)->get(route('training.sessions.prepare', $session->public_id));
+
+        $response->assertOk();
+        $response->assertDontSee('AKTOR PERSONA');
+        $response->assertDontSee('Instruksi internal rahasia');
+        $response->assertDontSee('director_snapshot');
+    }
+
+    public function test_prepare_page_contains_microphone_ui_container(): void
+    {
+        $user = User::factory()->sales()->active()->create();
+        $session = RoleplaySession::factory()->forUser($user)->create();
+        RoleplaySessionSnapshot::factory()->create(['roleplay_session_id' => $session->id]);
+
+        $response = $this->actingAs($user)->get(route('training.sessions.prepare', $session->public_id));
+
+        $response->assertOk();
+        $response->assertSee('id="microphone-permission-ui"', false);
+        $response->assertSee('data-microphone-ui', false);
+        $response->assertSee('Periksa Mikrofon');
+        $response->assertSee('Coba Lagi');
+    }
+
     private function createAssignedPersona(Scenario $scenario, User $user, string $name = 'Persona Aktif', array $versionData = []): Persona
     {
         $persona = $this->createPersona($user, $name, $versionData);

@@ -272,7 +272,7 @@ Verification note 2026-07-07: Created Phase 7 data model and snapshot infrastruc
 - [x] Implement HIDDEN_PERSONA server-side resolution + session creation.
 - [x] Build briefing screen.
 - [x] Build pre-call screen (preparation placeholder after session creation).
-- [ ] Implement microphone-permission UI.
+- [x] Implement microphone-permission UI.
 - [x] Implement secure roleplay-session creation transaction.
 - [x] Create Persona Snapshot (PersonaSnapshot DTO + SessionSnapshotService).
 - [x] Create Scenario Snapshot (ScenarioSnapshot DTO + SessionSnapshotService).
@@ -309,6 +309,8 @@ Verification note 2026-07-07: Built scenario briefing page (GET /training/scenar
 Verification note 2026-07-07: Implemented Phase 7.3 server-side persona resolution and RoleplaySession creation. Added POST /training/scenarios/{scenario}/sessions and GET /training/sessions/{publicId}/prepare. CHOOSE_PERSONA requires an assigned active persona; RANDOM_PERSONA and HIDDEN_PERSONA resolve an assigned active persona server-side. Creation runs in one DB transaction: validate mode, resolve persona, compile salience, merge rubric, compile actor instructions, create RoleplaySession, create immutable snapshot via SessionSnapshotService, hash and encrypt actor instructions. Preparation response exposes only safe session/scenario metadata and no persona hidden data, Director internals, or actor instructions. Fixed a flaky HQ nav assertion that matched random CSRF token text. All 618 tests pass (1840 assertions), `npm run build` succeeds (56 modules).
 
 Verification note 2026-07-07: Implemented duplicate-submit idempotency for roleplay session creation. Briefing forms now include a generated `idempotency_key`. RoleplaySession stores `idempotency_key` and `idempotency_fingerprint`; database uniqueness on `(user_id, idempotency_key)` prevents double-click duplicate sessions. Repeat valid submits with the same user/key/fingerprint redirect to the same preparation page. Reusing a key with a different request is rejected. Covered CHOOSE_PERSONA, RANDOM_PERSONA, HIDDEN_PERSONA, same-session redirect, different-key new session, and pending/suspended blocking. All 624 tests pass (1863 assertions), `npm run build` succeeds (56 modules).
+
+Verification note 2026-07-07: Implemented microphone-permission UI on the preparation page. The page now shows browser-only microphone states: preparing, checking microphone, microphone allowed, permission denied, and unavailable/error. JavaScript uses `navigator.mediaDevices.getUserMedia({ audio: true })` only, stops granted tracks immediately, and does not request Gemini credentials or start Live API. Added retry flow and calm Bahasa Indonesia permission guidance. Preparation page remains owner-only and hides actor instructions, Director state, hidden persona data, and selected hidden persona details. All 630 tests pass (1886 assertions), `npm run build` succeeds (56 modules).
 
 ---
 

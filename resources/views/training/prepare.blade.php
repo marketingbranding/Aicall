@@ -39,8 +39,67 @@
                         </div>
                     </div>
 
-                    <div class="rounded-lg border border-gray-200 p-4 text-sm text-gray-600">
-                        Siapkan mikrofon Anda. Pemeriksaan izin mikrofon dan koneksi Live API akan ditambahkan pada tahap berikutnya.
+                    <div id="microphone-permission-ui" class="rounded-2xl border border-sage-100 bg-sage-50/60 p-5 sm:p-6" data-microphone-ui>
+                        <div class="flex flex-col gap-5 sm:flex-row sm:items-start sm:justify-between">
+                            <div class="space-y-2">
+                                <p class="text-xs font-semibold uppercase tracking-wide text-sage-700">Pemeriksaan Mikrofon</p>
+                                <h4 class="text-lg font-semibold text-gray-900">Tarik napas sebentar. Kita cek mikrofon dulu.</h4>
+                                <p class="text-sm text-gray-600">
+                                    Pemeriksaan ini hanya memakai izin browser. Token Gemini Live belum dibuat dan panggilan belum dimulai.
+                                </p>
+                            </div>
+
+                            <div class="shrink-0 rounded-full bg-white px-3 py-1 text-xs font-medium text-gray-600 shadow-sm" data-microphone-badge>
+                                Menyiapkan
+                            </div>
+                        </div>
+
+                        <div class="mt-6 space-y-4">
+                            <div data-microphone-state="preparing" class="space-y-2">
+                                <p class="text-sm font-medium text-gray-900">Menyiapkan sesi</p>
+                                <p class="text-sm text-gray-600">Saat Anda siap, tekan tombol di bawah untuk memeriksa akses mikrofon.</p>
+                            </div>
+
+                            <div data-microphone-state="checking" class="hidden space-y-2">
+                                <p class="text-sm font-medium text-gray-900">Memeriksa mikrofon</p>
+                                <p class="text-sm text-gray-600">Browser mungkin menampilkan permintaan izin. Pilih izinkan agar latihan suara bisa berjalan nanti.</p>
+                            </div>
+
+                            <div data-microphone-state="allowed" class="hidden space-y-2">
+                                <p class="text-sm font-medium text-sage-800">Mikrofon siap</p>
+                                <p class="text-sm text-gray-600">Izin mikrofon sudah diberikan. Langkah koneksi panggilan akan ditambahkan pada tahap berikutnya.</p>
+                            </div>
+
+                            <div data-microphone-state="denied" class="hidden space-y-2">
+                                <p class="text-sm font-medium text-amber-800">Izin mikrofon belum diberikan</p>
+                                <p class="text-sm text-gray-600">
+                                    Buka pengaturan izin situs di browser Anda, izinkan mikrofon untuk halaman ini, lalu coba lagi.
+                                </p>
+                            </div>
+
+                            <div data-microphone-state="error" class="hidden space-y-2">
+                                <p class="text-sm font-medium text-amber-800">Mikrofon belum tersedia</p>
+                                <p class="text-sm text-gray-600" data-microphone-error>
+                                    Pastikan perangkat mikrofon terhubung dan browser mendukung akses mikrofon.
+                                </p>
+                            </div>
+                        </div>
+
+                        <div class="mt-6 flex flex-col gap-3 sm:flex-row">
+                            <button type="button" data-microphone-check
+                                class="inline-flex w-full items-center justify-center rounded-md border border-transparent bg-sage-600 px-4 py-2 text-xs font-semibold uppercase tracking-widest text-white transition duration-150 ease-in-out hover:bg-sage-700 focus:bg-sage-700 focus:outline-none focus:ring-2 focus:ring-sage-500 focus:ring-offset-2 active:bg-sage-800 sm:w-auto">
+                                Periksa Mikrofon
+                            </button>
+
+                            <button type="button" data-microphone-retry
+                                class="hidden inline-flex w-full items-center justify-center rounded-md border border-gray-300 bg-white px-4 py-2 text-xs font-semibold uppercase tracking-widest text-gray-700 shadow-sm transition duration-150 ease-in-out hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-sage-500 focus:ring-offset-2 sm:w-auto">
+                                Coba Lagi
+                            </button>
+                        </div>
+
+                        <p class="mt-4 text-xs text-gray-500">
+                            Jika Anda memakai headset, pastikan headset sudah terpasang sebelum memeriksa mikrofon.
+                        </p>
                     </div>
 
                     <div>
@@ -53,4 +112,67 @@
             </div>
         </div>
     </div>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            const root = document.querySelector('[data-microphone-ui]');
+            if (!root) return;
+
+            const badge = root.querySelector('[data-microphone-badge]');
+            const checkButton = root.querySelector('[data-microphone-check]');
+            const retryButton = root.querySelector('[data-microphone-retry]');
+            const errorText = root.querySelector('[data-microphone-error]');
+            const states = root.querySelectorAll('[data-microphone-state]');
+
+            const labels = {
+                preparing: 'Menyiapkan',
+                checking: 'Memeriksa',
+                allowed: 'Mikrofon siap',
+                denied: 'Izin ditolak',
+                error: 'Belum tersedia',
+            };
+
+            const showState = (state) => {
+                states.forEach((element) => {
+                    element.classList.toggle('hidden', element.dataset.microphoneState !== state);
+                });
+
+                if (badge) badge.textContent = labels[state] || labels.preparing;
+                checkButton?.classList.toggle('hidden', state !== 'preparing' && state !== 'allowed');
+                retryButton?.classList.toggle('hidden', state !== 'denied' && state !== 'error');
+            };
+
+            const checkMicrophone = async () => {
+                showState('checking');
+
+                if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
+                    if (errorText) {
+                        errorText.textContent = 'Browser ini belum mendukung pemeriksaan mikrofon. Coba gunakan browser terbaru.';
+                    }
+                    showState('error');
+                    return;
+                }
+
+                try {
+                    const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+                    stream.getTracks().forEach((track) => track.stop());
+                    showState('allowed');
+                } catch (error) {
+                    if (error && (error.name === 'NotAllowedError' || error.name === 'PermissionDeniedError')) {
+                        showState('denied');
+                        return;
+                    }
+
+                    if (errorText) {
+                        errorText.textContent = 'Mikrofon belum bisa digunakan. Periksa perangkat, izin browser, lalu coba lagi.';
+                    }
+                    showState('error');
+                }
+            };
+
+            checkButton?.addEventListener('click', checkMicrophone);
+            retryButton?.addEventListener('click', checkMicrophone);
+            showState('preparing');
+        });
+    </script>
 </x-app-layout>
