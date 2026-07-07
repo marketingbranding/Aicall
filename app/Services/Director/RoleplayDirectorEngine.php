@@ -12,6 +12,7 @@ class RoleplayDirectorEngine
     private ?HiddenInfoStateMachine $hiddenInfoStateMachine;
     private ?BoundaryStateMachine $boundaryStateMachine;
     private ?ConversationPhaseManager $phaseManager;
+    private ?DifficultyModifier $difficultyModifier = null;
 
     /** @var array<string, true> */
     private array $recentFingerprints = [];
@@ -35,6 +36,11 @@ class RoleplayDirectorEngine
         $this->phaseManager = $phaseManager;
     }
 
+    public function setDifficultyModifier(?DifficultyModifier $modifier): void
+    {
+        $this->difficultyModifier = $modifier;
+    }
+
     public function applyEvent(RoleplayEvent $event, DirectorState $currentState): DirectorEngineResult
     {
         $fingerprint = $event->fingerprint();
@@ -50,9 +56,13 @@ class RoleplayDirectorEngine
 
         $baseTransition = $this->ruleProvider->getBaseTransition($event->type);
 
+        $difficultyTransition = $this->difficultyModifier !== null
+            ? $this->difficultyModifier->apply($baseTransition)
+            : $baseTransition;
+
         $adjustedTransition = $this->diminishingCalculator->applyDiminishedTransition(
             $event->type,
-            $baseTransition,
+            $difficultyTransition,
         );
 
         $newState = $currentState->apply($adjustedTransition);
