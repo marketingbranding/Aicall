@@ -169,26 +169,33 @@ Verification note 2026-07-06: Created `scenarios`, `scenario_versions`, and `sce
 
 ## Phase 5 — Roleplay Instruction Compiler
 
-- [ ] Create immutable Persona/Scenario/Difficulty snapshot DTOs.
-- [ ] Implement Session Snapshot service.
-- [ ] Implement structured Actor Instruction sections.
-- [ ] Compile Primary Behavior.
-- [ ] Compile Secondary Behavior.
-- [ ] Compile Background tendencies selectively.
-- [ ] Compile Knowledge and Misconceptions.
-- [ ] Compile Scenario context.
-- [ ] Compile Director Note rules.
-- [ ] Compile Actor guardrails.
-- [ ] Hash/store instruction snapshot privately.
-- [ ] Prevent Sales endpoints from exposing compiled instructions.
+- [x] Create RoleplayInstruction DTO with 11 typed sections + `toText()` assembler.
+- [x] Implement RoleplayInstructionCompiler as pure domain service.
+- [x] Compile Primary Behavior with qualitative trait descriptions (sangat/cenderung/sedikit).
+- [x] Compile Secondary Behavior.
+- [x] Compile Background tendencies as concise single-sentence list.
+- [x] Compile Knowledge and Misconceptions.
+- [x] Compile Scenario context.
+- [x] Compile Director Note rules (internal-only, never read aloud).
+- [x] Compile Actor guardrails (no AI reveal, no coaching, boundary safety, hidden info rules).
+- [ ] Create immutable Persona/Scenario/Difficulty snapshot DTOs (Phase 7).
+- [ ] Implement Session Snapshot service (Phase 7).
+- [ ] Hash/store instruction snapshot privately (Phase 7).
+- [ ] Prevent Sales endpoints from exposing compiled instructions (Phase 7).
 
 ### Phase 5 Tests
 
-- [ ] instructions are structured
-- [ ] instructions do not dump all sliders
-- [ ] misconceptions are preserved
-- [ ] hidden information rules exist
-- [ ] Director Notes are explicitly internal
+- [x] instructions include persona identity and scenario context
+- [x] instructions do not expose internal numeric state
+- [x] misconceptions are preserved
+- [x] hidden information rules and guardrails exist
+- [x] objection behavior rules exist
+- [x] boundary behavior safety rules exist
+- [x] first speaker/opening instruction included
+- [x] Director Notes are explicitly internal
+- [x] deterministic output (same input → same output)
+
+Verification note 2026-07-07: Created `RoleplayInstruction` (DTO with 11 typed sections + `toText()`) and `RoleplayInstructionCompiler` (pure domain service). Compiler takes `PersonaVersion`, `SalienceResult`, and `ScenarioVersion`, produces structured Actor Instructions with 11 sections in Bahasa Indonesia. 38 trait descriptions with intensity-based qualitative wording (sangat/cenderung/sedikit). All 267 tests pass (726 assertions), `npm run build` succeeds (56 modules).
 
 ---
 
