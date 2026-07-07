@@ -264,9 +264,9 @@ Verification note 2026-07-07: Created Phase 7 data model and snapshot infrastruc
 
 ## Phase 7 — Roleplay Session Setup and Sales Flow
 
-- [ ] Build Training Dashboard.
+- [x] Build Training Dashboard.
 - [ ] Build Scenario selection.
-- [ ] Display difficulty.
+- [x] Display difficulty.
 - [ ] Implement CHOOSE_PERSONA flow.
 - [ ] Implement RANDOM_PERSONA server-side resolution.
 - [ ] Implement HIDDEN_PERSONA server-side resolution.
@@ -294,10 +294,12 @@ Verification note 2026-07-07: Created Phase 7 data model and snapshot infrastruc
 - [x] snapshot is one per session (UNIQUE constraint)
 - [x] session lifecycle transitions
 - [x] session toArray does not expose snapshot data
-- [ ] hidden data absent from browser response (Phase 7.2 — endpoint layer)
+- [x] hidden data absent from browser response (verified — hidden_context, target_behaviors, etc. never loaded)
 - [ ] unauthorized persona cannot be selected (Phase 7.2)
 - [ ] same setup creates one application session (Phase 7.2)
 - [ ] snapshots are immutable (application-level contract, tested via factory)
+
+Verification note 2026-07-07: Built Training Dashboard with card layout listing active scenarios (name, difficulty, description, max duration, allowed persona modes). Used existing `account.active` middleware + `view-own-training` gate. Added `/training` route (training.dashboard) and "Latihan" nav link. Hidden fields (hidden_context, target_behaviors, sales_briefing, training_objective, success/failure conditions) are never loaded in controller query. All 597 tests pass (1753 assertions), `npm run build` succeeds (56 modules).
 
 ---
 

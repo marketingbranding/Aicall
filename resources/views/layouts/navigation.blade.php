@@ -16,6 +16,12 @@
                         {{ __('Dashboard') }}
                     </x-nav-link>
 
+                    @can('view-own-training')
+                        <x-nav-link :href="route('training.dashboard')" :active="request()->routeIs('training.*')">
+                            {{ __('Latihan') }}
+                        </x-nav-link>
+                    @endcan
+
                     @can('access-hq')
                         <x-nav-link :href="route('hq.users.pending')" :active="request()->routeIs('hq.*') && !request()->routeIs('hq.personas.*')">
                             {{ __('Pengguna') }}
@@ -82,6 +88,12 @@
             <x-responsive-nav-link :href="route('dashboard')" :active="request()->routeIs('dashboard')">
                 {{ __('Dashboard') }}
             </x-responsive-nav-link>
+
+            @can('view-own-training')
+                <x-responsive-nav-link :href="route('training.dashboard')" :active="request()->routeIs('training.*')">
+                    {{ __('Latihan') }}
+                </x-responsive-nav-link>
+            @endcan
 
             @can('access-hq')
                 <x-responsive-nav-link :href="route('hq.users.pending')" :active="request()->routeIs('hq.*') && !request()->routeIs('hq.personas.*')">
