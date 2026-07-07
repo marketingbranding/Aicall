@@ -213,7 +213,7 @@ Verification note 2026-07-07: Created `RoleplayInstruction` (DTO with 11 typed s
 - [ ] Implement transition-rule architecture.
 - [ ] Implement core communication transition rules.
 - [x] Implement Objection State Machine.
-- [ ] Implement Hidden Information State Machine.
+- [x] Implement Hidden Information State Machine.
 - [ ] Implement Boundary State Machine.
 - [ ] Implement Conversation Phase Manager.
 - [ ] Implement Difficulty modifiers.
@@ -232,7 +232,7 @@ Verification note 2026-07-07: Created `RoleplayInstruction` (DTO with 11 typed s
 - [x] diminishing returns
 - [ ] note cooldown
 - [x] objection transitions
-- [ ] disclosure transitions
+- [x] disclosure transitions
 - [ ] boundary transitions
 - [ ] AI-ending eligibility
 
@@ -241,6 +241,8 @@ Verification note 2026-07-07: Created StateToBehaviorTranslator, StateBand enum,
 Verification note 2026-07-07: Implemented diminishing returns via DiminishingReturnCalculator. Tracks event type frequency in 20-entry ring buffer. Positive event deltas (trust/interest/engagement gains, confusion/anxiety/irritation/pressure reductions) are multiplied by 1.0 → 0.5 → 0.25 → 0.0 on repeat occurrences. Negative/harmful deltas are never softened. Integrated into RoleplayDirectorEngine alongside existing fingerprint dedup. All 327 tests pass (975 assertions), `npm run build` succeeds (56 modules).
 
 Verification note 2026-07-07: Implemented ObjectionStateMachine with ObjectionState enum (7 states: DORMANT, ACTIVE_HIDDEN, ACTIVE_VISIBLE, ACKNOWLEDGED, PARTIALLY_RESOLVED, RESOLVED, REACTIVATED) and ObjectionTransition DTO. Transition rules defined for OBJECTION_TRIGGERED, RELEVANT_FOLLOW_UP, CONCERN_DISCOVERED, OBJECTION_ACKNOWLEDGED, OBJECTION_PARTIALLY_RESOLVED, OBJECTION_RESOLVED_CANDIDATE, DISMISSED_CONCERN, UNSUPPORTED_CLAIM, CONTRADICTORY_STATEMENT. Integrated into RoleplayDirectorEngine via injectable `?ObjectionStateMachine`. DirectorEngineResult includes `objectionTransitions` array and `toArray()`. All 352 tests pass (1058 assertions), `npm run build` succeeds (56 modules).
+
+Verification note 2026-07-07: Implemented HiddenInfoStateMachine with HiddenInfoState enum (4 states: LOCKED, ELIGIBLE, DISCLOSED_PARTIAL, DISCLOSED_FULL) and HiddenInfoTransition DTO. State transitions consider trust_requirement, sensitivity, direct_question_effectiveness, relevant_topics, and event type. Trigger events: RELEVANT_FOLLOW_UP, EMPATHIC_RESPONSE, CLEAR_EXPLANATION, TRUST_SIGNAL, CONCERN_DISCOVERED, APPROPRIATE_NEXT_STEP. Integrated into RoleplayDirectorEngine via injectable `?HiddenInfoStateMachine`. DirectorEngineResult includes `hiddenInfoTransitions`. All 377 tests pass (1132 assertions), `npm run build` succeeds (56 modules).
 
 ---
 
