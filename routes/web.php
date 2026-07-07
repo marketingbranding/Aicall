@@ -64,6 +64,24 @@ Route::middleware(['auth', 'hq'])->prefix('hq')->name('hq.')->group(function () 
         ->name('scenarios.archive');
     Route::post('/scenarios/{scenario}/duplicate', [\App\Http\Controllers\Hq\ScenarioController::class, 'duplicate'])
         ->name('scenarios.duplicate');
+
+    Route::get('/global-rubrics', [\App\Http\Controllers\Hq\GlobalRubricController::class, 'index'])
+        ->name('global-rubrics.index');
+    Route::get('/global-rubrics/create', [\App\Http\Controllers\Hq\GlobalRubricController::class, 'create'])
+        ->name('global-rubrics.create');
+    Route::post('/global-rubrics', [\App\Http\Controllers\Hq\GlobalRubricController::class, 'store'])
+        ->name('global-rubrics.store');
+    Route::get('/global-rubrics/{rubric}/edit', [\App\Http\Controllers\Hq\GlobalRubricController::class, 'edit'])
+        ->name('global-rubrics.edit');
+    Route::put('/global-rubrics/{rubric}', [\App\Http\Controllers\Hq\GlobalRubricController::class, 'update'])
+        ->name('global-rubrics.update');
+    Route::post('/global-rubrics/{rubric}/archive', [\App\Http\Controllers\Hq\GlobalRubricController::class, 'archive'])
+        ->name('global-rubrics.archive');
+
+    Route::get('/scenarios/{scenario}/rubrics', [\App\Http\Controllers\Hq\ScenarioRubricController::class, 'edit'])
+        ->name('scenario-rubrics.edit');
+    Route::post('/scenarios/{scenario}/rubrics', [\App\Http\Controllers\Hq\ScenarioRubricController::class, 'update'])
+        ->name('scenario-rubrics.update');
 });
 
 Route::get('/_test/hq-ping', function () {

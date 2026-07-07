@@ -81,6 +81,11 @@ class User extends Authenticatable
         return $this->role->canManageScenarios();
     }
 
+    public function canManageRubrics(): bool
+    {
+        return $this->role->canManageRubrics();
+    }
+
     public function canConfigureAiProviders(): bool
     {
         return $this->role->canConfigureAiProviders();

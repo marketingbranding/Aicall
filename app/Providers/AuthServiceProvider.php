@@ -3,10 +3,12 @@
 namespace App\Providers;
 
 use App\Models\Branch;
+use App\Models\EvaluationRubric;
 use App\Models\Persona;
 use App\Models\User;
 use App\Policies\BranchPolicy;
 use App\Policies\PersonaPolicy;
+use App\Policies\RubricPolicy;
 use App\Policies\UserPolicy;
 use Illuminate\Foundation\Support\Providers\AuthServiceProvider as ServiceProvider;
 use Illuminate\Support\Facades\Gate;
@@ -15,6 +17,7 @@ class AuthServiceProvider extends ServiceProvider
 {
     protected $policies = [
         Branch::class => BranchPolicy::class,
+        EvaluationRubric::class => RubricPolicy::class,
         Persona::class => PersonaPolicy::class,
         User::class => UserPolicy::class,
     ];
@@ -32,6 +35,8 @@ class AuthServiceProvider extends ServiceProvider
         Gate::define('manage-personas', fn (User $user) => $user->canManagePersonas());
 
         Gate::define('manage-scenarios', fn (User $user) => $user->canManageScenarios());
+
+        Gate::define('manage-rubrics', fn (User $user) => $user->canManageRubrics());
 
         Gate::define('configure-ai-providers', fn (User $user) => $user->canConfigureAiProviders());
 

@@ -30,4 +30,17 @@ class ScenarioFactory extends Factory
             'status' => Scenario::STATUS_ARCHIVED,
         ]);
     }
+
+    public function withVersion(array $versionData = []): static
+    {
+        return $this->afterCreating(function (Scenario $scenario) use ($versionData) {
+            $version = $scenario->versions()->create(array_merge([
+                'version_number' => 1,
+                'created_by' => $scenario->created_by,
+                'created_at' => now(),
+            ], $versionData));
+
+            $scenario->update(['current_version_id' => $version->id]);
+        });
+    }
 }

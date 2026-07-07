@@ -53,6 +53,11 @@ class ScenarioVersion extends Model
         return $this->hasMany(ScenarioPersona::class, 'scenario_version_id');
     }
 
+    public function rubricOverrides(): HasMany
+    {
+        return $this->hasMany(ScenarioRubricOverride::class, 'scenario_version_id');
+    }
+
     public function replicateForScenario(Scenario $newScenario, User $user): self
     {
         $replica = $this->replicate()->fill([

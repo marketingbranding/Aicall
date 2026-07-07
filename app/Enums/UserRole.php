@@ -55,6 +55,14 @@ enum UserRole: string
         };
     }
 
+    public function canManageRubrics(): bool
+    {
+        return match ($this) {
+            self::SuperAdmin => true,
+            self::Sales => false,
+        };
+    }
+
     public function canConfigureAiProviders(): bool
     {
         return match ($this) {
