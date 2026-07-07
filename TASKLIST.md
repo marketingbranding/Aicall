@@ -219,7 +219,7 @@ Verification note 2026-07-07: Created `RoleplayInstruction` (DTO with 11 typed s
 - [ ] Implement Difficulty modifiers.
 - [x] Implement Director Note Planner.
 - [x] Implement Director Note cooldown and duplicate suppression.
-- [ ] Implement AI-ending eligibility.
+- [x] Implement AI-ending eligibility.
 - [ ] Implement Director Session Summary Builder.
 
 ### Phase 6 Tests
@@ -234,7 +234,7 @@ Verification note 2026-07-07: Created `RoleplayInstruction` (DTO with 11 typed s
 - [x] objection transitions
 - [x] disclosure transitions
 - [x] boundary transitions
-- [ ] AI-ending eligibility
+- [x] AI-ending eligibility
 
 Verification note 2026-07-07: Created StateToBehaviorTranslator, StateBand enum, and BehaviorTranslationResult DTO. Translator maps 7 DirectorState vars to qualitative bands (VERY_LOW—VERY_HIGH) per spec thresholds (0-20, 21-40, 41-60, 61-80, 81-100). Generates deterministic Bahasa Indonesia qualitative text and Director Note suggestions. No AI dependency. All 311 tests pass (931 assertions), `npm run build` succeeds (56 modules).
 
@@ -251,6 +251,8 @@ Verification note 2026-07-07: Implemented ConversationPhaseManager with Conversa
 Verification note 2026-07-07: Implemented DirectorNotePlanner with DirectorNote DTO. Planner consumes DirectorState (prev+new), BehaviorTranslationResult, objection/hidden-info/boundary/phase transitions. Generates notes for: objection transitions with directorNote, hidden info transitions with directorNote, boundary transitions with directorNote, phase changes (with 14 pre-mapped phase pairs + fallback), premature closing, and state threshold crossings (trust ≤30/≥70, irritation ≥60, engagement ≤30/≥70, confusion ≥60, pressure ≥60, anxiety ≥70 — only when newly crossed). Notes are qualitative Bahasa Indonesia, never expose numeric state. Deterministic output. All 490 tests pass (1467 assertions), `npm run build` succeeds (56 modules).
 
 Verification note 2026-07-07: Implemented DirectorNoteCooldown with turn-based cooldown and duplicate suppression. Cooldown periods per category: objection/hidden_info/boundary=4, state_threshold/phase_change=5, premature_closing=8, unknown=5. Duplicate detection via 3-entry text ring buffer. Notes with priority ≥3 (critical) bypass all cooldown/duplicate checks. Turn counter advances via `nextTurn()`. `reset()` clears all state. Deterministic output. All 513 tests pass (1511 assertions), `npm run build` succeeds (56 modules).
+
+Verification note 2026-07-07: Implemented AiEndEligibility + AiEndEligibilityResult DTO. `evaluate()` accepts allowAiEndCall, DirectorState, boundaryStateValue, conversationPhaseValue, and event counts. Priority-ordered checks: not_enabled → boundary_termination → trust_collapse (≤20) → low_engagement (≤20) → high_pressure (≥80) → repeated_dismissal (≥2) → aggressive_closing_early (≥2 in pre-COMMITMENT phases) → repeated_unsupported_claim (≥3) → natural_ending (ENDING phase). Qualitative Bahasa Indonesia director note, no numeric state exposure. Deterministic output. All 536 tests pass (1553 assertions), `npm run build` succeeds (56 modules).
 
 ---
 
