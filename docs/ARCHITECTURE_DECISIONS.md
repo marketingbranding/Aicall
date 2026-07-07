@@ -58,14 +58,14 @@ Change to delegate through the ScenarioPolicy, since the scenario rubric is acce
 ```php
 public function authorize(): bool
 {
-    if ($this->route('scenario')) {
-        return $this->user()->can('update', $this->route('scenario'));
-    }
-    return $this->user()->can('manageRubrics');
+    return $this->user()->can('update', $this->route('scenario'));
 }
 ```
 
 **Target: Before Phase 4.**
+
+### Resolution (2026-07-07)
+Fixed in commit `[current]`. `UpsertScenarioRubricRequest::authorize()` now calls `$this->user()->can('update', $this->route('scenario'))`, consistent with all other FormRequests. Sales users remain blocked because `ScenarioPolicy::update()` delegates to `canManageScenarios()`, which returns `false` for Sales. Existing `test_sales_cannot_create_scenario_rubric` and `test_sales_cannot_view_scenario_rubric_page` continue to assert 403.
 
 ---
 
@@ -140,6 +140,13 @@ foreach ($this->rubricOverrides as $override) {
 And in `Scenario::duplicate()`, handle scenario rubrics by creating a new EvaluationRubric for the cloned version.
 
 **Target: Before Phase 5 (snapshot creation depends on correct rubric data).**
+
+### Resolution (2026-07-07)
+Fixed. `replicateForScenario()` now replicates:
+1. `rubricOverrides` (ScenarioRubricOverride records)
+2. Scenario-specific `EvaluationRubric` (with all items)
+
+Covered by `test_duplicate_preserves_rubric_overrides` and `test_duplicate_preserves_scenario_rubric`.
 
 ---
 
@@ -289,11 +296,15 @@ The biggest gap is the **Rubric Snapshot**. If Global Rubric is refactored to th
 
 ## Summary
 
+### Fixed (2026-07-07)
+| # | Severity | Item | Resolution |
+|---|----------|------|------------|
+| 4 | **Critical** | Scenario duplication loses rubric data | `replicateForScenario()` now copies rubricOverrides + EvaluationRubric |
+| 2 | **High** | UpsertScenarioRubricRequest bypasses Policy | Uses `can('update', $scenario)` via ScenarioPolicy |
+
 ### Must Fix Before Phase 4
 | # | Severity | Item |
 |---|----------|------|
-| 4 | **Critical** | Scenario duplication loses rubric data |
-| 2 | **High** | UpsertScenarioRubricRequest bypasses Policy |
 | 1 | **High** | Global Rubric inconsistent versioning strategy |
 
 ### Should Fix Before Phase 7 (Session Creation)

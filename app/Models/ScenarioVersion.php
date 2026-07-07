@@ -7,6 +7,8 @@ use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 
+use App\Models\EvaluationRubric;
+
 #[Fillable([
     'scenario_id', 'version_number',
     'description', 'sales_briefing', 'hidden_context', 'training_objective',
@@ -72,6 +74,31 @@ class ScenarioVersion extends Model
             $assignment->replicate()->fill([
                 'scenario_version_id' => $replica->id,
             ])->save();
+        }
+
+        foreach ($this->rubricOverrides as $override) {
+            $override->replicate()->fill([
+                'scenario_version_id' => $replica->id,
+            ])->save();
+        }
+
+        $rubric = EvaluationRubric::where('type', EvaluationRubric::TYPE_SCENARIO)
+            ->where('scenario_version_id', $this->id)
+            ->with('items')
+            ->first();
+
+        if ($rubric) {
+            $newRubric = $rubric->replicate()->fill([
+                'scenario_version_id' => $replica->id,
+                'version_number' => 1,
+            ]);
+            $newRubric->save();
+
+            foreach ($rubric->items as $item) {
+                $item->replicate()->fill([
+                    'evaluation_rubric_id' => $newRubric->id,
+                ])->save();
+            }
         }
 
         return $replica;

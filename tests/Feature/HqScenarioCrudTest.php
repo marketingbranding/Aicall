@@ -2,10 +2,12 @@
 
 namespace Tests\Feature;
 
+use App\Models\EvaluationRubric;
 use App\Models\Persona;
 use App\Models\Scenario;
 use App\Models\ScenarioVersion;
 use App\Models\User;
+use Database\Factories\EvaluationRubricFactory;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Tests\TestCase;
 
@@ -273,6 +275,82 @@ class HqScenarioCrudTest extends TestCase
         $this->assertCount(1, $clones);
         $this->assertTrue($clones->first()->isActive());
         $this->assertNotNull($clones->first()->currentVersion);
+    }
+
+    public function test_duplicate_preserves_rubric_overrides(): void
+    {
+        $scenario = Scenario::factory()->create(['created_by' => $this->superAdmin->id]);
+        $version = ScenarioVersion::create([
+            'scenario_id' => $scenario->id,
+            'version_number' => 1,
+            'description' => 'Deskripsi dengan override',
+            'first_speaker' => 'AI',
+            'difficulty_level' => 'NORMAL',
+            'created_by' => $this->superAdmin->id,
+            'created_at' => now(),
+        ]);
+        $scenario->update(['current_version_id' => $version->id]);
+
+        $version->rubricOverrides()->create([
+            'global_rubric_item_key' => 'g_fluency',
+            'weight_override' => 150,
+        ]);
+
+        $this->actingAs($this->superAdmin)
+            ->post(route('hq.scenarios.duplicate', $scenario));
+
+        $clone = Scenario::where('name', 'LIKE', $scenario->name . '%')
+            ->where('id', '!=', $scenario->id)
+            ->first();
+
+        $this->assertNotNull($clone);
+        $overrides = $clone->currentVersion->rubricOverrides;
+        $this->assertCount(1, $overrides);
+        $this->assertEquals('g_fluency', $overrides->first()->global_rubric_item_key);
+        $this->assertEquals(150, $overrides->first()->weight_override);
+    }
+
+    public function test_duplicate_preserves_scenario_rubric(): void
+    {
+        $scenario = Scenario::factory()->create(['created_by' => $this->superAdmin->id]);
+        $version = ScenarioVersion::create([
+            'scenario_id' => $scenario->id,
+            'version_number' => 1,
+            'description' => 'Deskripsi dengan rubric',
+            'first_speaker' => 'AI',
+            'difficulty_level' => 'NORMAL',
+            'created_by' => $this->superAdmin->id,
+            'created_at' => now(),
+        ]);
+        $scenario->update(['current_version_id' => $version->id]);
+
+        $rubric = EvaluationRubricFactory::new()->scenario()->create([
+            'scenario_version_id' => $version->id,
+            'name' => 'Rubrik Skenario Asli',
+        ]);
+        $rubric->items()->create([
+            'key' => 'custom_item',
+            'title' => 'Item Kustom',
+            'weight' => 100,
+        ]);
+
+        $this->actingAs($this->superAdmin)
+            ->post(route('hq.scenarios.duplicate', $scenario));
+
+        $clone = Scenario::where('name', 'LIKE', $scenario->name . '%')
+            ->where('id', '!=', $scenario->id)
+            ->first();
+
+        $this->assertNotNull($clone);
+        $cloneRubric = EvaluationRubric::where('type', EvaluationRubric::TYPE_SCENARIO)
+            ->where('scenario_version_id', $clone->currentVersion->id)
+            ->with('items')
+            ->first();
+
+        $this->assertNotNull($cloneRubric);
+        $this->assertEquals('Rubrik Skenario Asli', $cloneRubric->name);
+        $this->assertCount(1, $cloneRubric->items);
+        $this->assertEquals('custom_item', $cloneRubric->items->first()->key);
     }
 
     public function test_archived_scenario_appears_in_list(): void

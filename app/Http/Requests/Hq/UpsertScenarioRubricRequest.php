@@ -9,7 +9,7 @@ class UpsertScenarioRubricRequest extends FormRequest
 {
     public function authorize(): bool
     {
-        return $this->user()->canManageRubrics();
+        return $this->user()->can('update', $this->route('scenario'));
     }
 
     public function rules(): array
