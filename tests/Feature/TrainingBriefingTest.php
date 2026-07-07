@@ -2,10 +2,14 @@
 
 namespace Tests\Feature;
 
+use App\Enums\PersonaMode;
 use App\Models\Persona;
+use App\Models\RoleplaySession;
+use App\Models\RoleplaySessionSnapshot;
 use App\Models\Scenario;
 use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Support\Facades\DB;
 use Tests\TestCase;
 
 class TrainingBriefingTest extends TestCase
@@ -218,5 +222,251 @@ class TrainingBriefingTest extends TestCase
         $response->assertOk();
         $response->assertSee('Enabled');
         $response->assertDontSee('Disabled');
+    }
+
+    public function test_choose_persona_creates_session_with_selected_valid_persona(): void
+    {
+        $user = User::factory()->sales()->active()->create();
+        $scenario = Scenario::factory()->withVersion([
+            'allowed_persona_modes_json' => [PersonaMode::CHOOSE_PERSONA->value],
+            'difficulty_level' => 'NORMAL',
+        ])->create();
+        $persona = $this->createAssignedPersona($scenario, $user, 'Persona Pilihan');
+
+        $response = $this->actingAs($user)->post(route('training.scenarios.sessions.store', $scenario), [
+            'persona_mode' => PersonaMode::CHOOSE_PERSONA->value,
+            'persona_id' => $persona->id,
+        ]);
+
+        $session = RoleplaySession::first();
+        $response->assertRedirect(route('training.sessions.prepare', $session->public_id, absolute: false));
+
+        $this->assertSame($user->id, $session->user_id);
+        $this->assertSame($scenario->code, $session->scenario_id);
+        $this->assertSame($persona->code, $session->persona_id);
+        $this->assertSame(PersonaMode::CHOOSE_PERSONA->value, $session->persona_mode);
+        $this->assertNotNull($session->snapshot);
+    }
+
+    public function test_choose_persona_rejects_invalid_unassigned_persona(): void
+    {
+        $user = User::factory()->sales()->active()->create();
+        $scenario = Scenario::factory()->withVersion([
+            'allowed_persona_modes_json' => [PersonaMode::CHOOSE_PERSONA->value],
+        ])->create();
+        $unassignedPersona = $this->createPersona($user, 'Persona Tidak Ditugaskan');
+
+        $response = $this->actingAs($user)->from(route('training.scenarios.briefing', $scenario))->post(route('training.scenarios.sessions.store', $scenario), [
+            'persona_mode' => PersonaMode::CHOOSE_PERSONA->value,
+            'persona_id' => $unassignedPersona->id,
+        ]);
+
+        $response->assertRedirect(route('training.scenarios.briefing', $scenario, absolute: false));
+        $response->assertSessionHasErrors('persona_id');
+        $this->assertDatabaseCount('roleplay_sessions', 0);
+        $this->assertDatabaseCount('roleplay_session_snapshots', 0);
+    }
+
+    public function test_random_persona_creates_session(): void
+    {
+        $user = User::factory()->sales()->active()->create();
+        $scenario = Scenario::factory()->withVersion([
+            'allowed_persona_modes_json' => [PersonaMode::RANDOM_PERSONA->value],
+        ])->create();
+        $persona = $this->createAssignedPersona($scenario, $user, 'Persona Acak');
+
+        $response = $this->actingAs($user)->post(route('training.scenarios.sessions.store', $scenario), [
+            'persona_mode' => PersonaMode::RANDOM_PERSONA->value,
+        ]);
+
+        $session = RoleplaySession::first();
+        $response->assertRedirect(route('training.sessions.prepare', $session->public_id, absolute: false));
+        $this->assertSame($persona->code, $session->persona_id);
+        $this->assertSame(PersonaMode::RANDOM_PERSONA->value, $session->persona_mode);
+    }
+
+    public function test_hidden_persona_creates_session_without_exposing_selected_persona(): void
+    {
+        $user = User::factory()->sales()->active()->create();
+        $scenario = Scenario::factory()->withVersion([
+            'allowed_persona_modes_json' => [PersonaMode::HIDDEN_PERSONA->value],
+        ])->create();
+        $persona = $this->createAssignedPersona($scenario, $user, 'Nama Persona Rahasia', [
+            'public_profile_text' => 'Profil rahasia tidak boleh tampil.',
+            'identity_json' => ['pekerjaan' => 'Pekerjaan Rahasia'],
+            'human_behavior_traits_json' => ['interrupting_tendency' => 90],
+        ]);
+
+        $response = $this->actingAs($user)->followingRedirects()->post(route('training.scenarios.sessions.store', $scenario), [
+            'persona_mode' => PersonaMode::HIDDEN_PERSONA->value,
+        ]);
+
+        $response->assertOk();
+        $response->assertSee('Sesi latihan berhasil dibuat');
+        $response->assertDontSee('Nama Persona Rahasia');
+        $response->assertDontSee('Profil rahasia tidak boleh tampil');
+        $response->assertDontSee('Pekerjaan Rahasia');
+        $response->assertDontSee('interrupting_tendency');
+
+        $this->assertSame($persona->code, RoleplaySession::first()->persona_id);
+    }
+
+    public function test_disallowed_persona_mode_is_rejected(): void
+    {
+        $user = User::factory()->sales()->active()->create();
+        $scenario = Scenario::factory()->withVersion([
+            'allowed_persona_modes_json' => [PersonaMode::CHOOSE_PERSONA->value],
+        ])->create();
+
+        $response = $this->actingAs($user)->from(route('training.scenarios.briefing', $scenario))->post(route('training.scenarios.sessions.store', $scenario), [
+            'persona_mode' => PersonaMode::RANDOM_PERSONA->value,
+        ]);
+
+        $response->assertRedirect(route('training.scenarios.briefing', $scenario, absolute: false));
+        $response->assertSessionHasErrors('persona_mode');
+        $this->assertDatabaseCount('roleplay_sessions', 0);
+    }
+
+    public function test_pending_and_suspended_users_cannot_create_sessions(): void
+    {
+        $scenario = Scenario::factory()->withVersion([
+            'allowed_persona_modes_json' => [PersonaMode::RANDOM_PERSONA->value],
+        ])->create();
+
+        $pending = User::factory()->sales()->pendingApproval()->create();
+        $suspended = User::factory()->sales()->suspended()->create();
+
+        $this->actingAs($pending)->post(route('training.scenarios.sessions.store', $scenario), [
+            'persona_mode' => PersonaMode::RANDOM_PERSONA->value,
+        ])->assertRedirect(route('account.pending', absolute: false));
+
+        $this->actingAs($suspended)->post(route('training.scenarios.sessions.store', $scenario), [
+            'persona_mode' => PersonaMode::RANDOM_PERSONA->value,
+        ])->assertRedirect(route('account.suspended', absolute: false));
+
+        $this->assertDatabaseCount('roleplay_sessions', 0);
+    }
+
+    public function test_session_creation_creates_snapshot(): void
+    {
+        $user = User::factory()->sales()->active()->create();
+        $scenario = Scenario::factory()->withVersion([
+            'allowed_persona_modes_json' => [PersonaMode::RANDOM_PERSONA->value],
+        ])->create();
+        $this->createAssignedPersona($scenario, $user);
+
+        $this->actingAs($user)->post(route('training.scenarios.sessions.store', $scenario), [
+            'persona_mode' => PersonaMode::RANDOM_PERSONA->value,
+        ]);
+
+        $this->assertDatabaseCount('roleplay_sessions', 1);
+        $this->assertDatabaseCount('roleplay_session_snapshots', 1);
+        $this->assertNotNull(RoleplaySession::first()->snapshot);
+    }
+
+    public function test_actor_instruction_hash_exists_after_session_creation(): void
+    {
+        $user = User::factory()->sales()->active()->create();
+        $scenario = Scenario::factory()->withVersion([
+            'allowed_persona_modes_json' => [PersonaMode::RANDOM_PERSONA->value],
+        ])->create();
+        $this->createAssignedPersona($scenario, $user);
+
+        $this->actingAs($user)->post(route('training.scenarios.sessions.store', $scenario), [
+            'persona_mode' => PersonaMode::RANDOM_PERSONA->value,
+        ]);
+
+        $hash = RoleplaySessionSnapshot::first()->actor_instruction_hash;
+        $this->assertSame(64, strlen($hash));
+        $this->assertMatchesRegularExpression('/^[a-f0-9]{64}$/', $hash);
+    }
+
+    public function test_actor_instructions_are_encrypted_after_session_creation(): void
+    {
+        $user = User::factory()->sales()->active()->create();
+        $scenario = Scenario::factory()->withVersion([
+            'allowed_persona_modes_json' => [PersonaMode::RANDOM_PERSONA->value],
+        ])->create();
+        $this->createAssignedPersona($scenario, $user);
+
+        $this->actingAs($user)->post(route('training.scenarios.sessions.store', $scenario), [
+            'persona_mode' => PersonaMode::RANDOM_PERSONA->value,
+        ]);
+
+        $snapshot = RoleplaySessionSnapshot::first();
+        $raw = DB::table('roleplay_session_snapshots')->where('id', $snapshot->id)->value('actor_instructions');
+
+        $this->assertStringContainsString('=== AKTOR PERSONA ===', $snapshot->actor_instructions);
+        $this->assertNotSame($snapshot->actor_instructions, $raw);
+        $this->assertStringStartsWith('eyJ', $raw);
+    }
+
+    public function test_hidden_data_not_exposed_in_session_creation_response(): void
+    {
+        $user = User::factory()->sales()->active()->create();
+        $scenario = Scenario::factory()->withVersion([
+            'allowed_persona_modes_json' => [PersonaMode::HIDDEN_PERSONA->value],
+            'hidden_context' => 'konteks internal tidak tampil',
+            'target_behaviors_json' => ['target_internal'],
+            'prohibited_claims_json' => ['klaim_internal'],
+        ])->create();
+        $this->createAssignedPersona($scenario, $user, 'Persona Internal', [
+            'public_profile_text' => 'Profil publik internal',
+            'human_behavior_traits_json' => ['dominance' => 88],
+        ]);
+
+        $response = $this->actingAs($user)->followingRedirects()->post(route('training.scenarios.sessions.store', $scenario), [
+            'persona_mode' => PersonaMode::HIDDEN_PERSONA->value,
+        ]);
+
+        $response->assertOk();
+        $response->assertDontSee('konteks internal tidak tampil');
+        $response->assertDontSee('target_internal');
+        $response->assertDontSee('klaim_internal');
+        $response->assertDontSee('Persona Internal');
+        $response->assertDontSee('Profil publik internal');
+        $response->assertDontSee('dominance');
+        $response->assertDontSee('AKTOR PERSONA');
+        $response->assertDontSee('director_snapshot');
+    }
+
+    private function createAssignedPersona(Scenario $scenario, User $user, string $name = 'Persona Aktif', array $versionData = []): Persona
+    {
+        $persona = $this->createPersona($user, $name, $versionData);
+
+        $scenario->currentVersion->assignedPersonas()->create([
+            'persona_id' => $persona->id,
+            'is_enabled' => true,
+        ]);
+
+        return $persona;
+    }
+
+    private function createPersona(User $user, string $name = 'Persona Aktif', array $versionData = []): Persona
+    {
+        $persona = Persona::factory()->create([
+            'name' => $name,
+            'status' => Persona::STATUS_ACTIVE,
+        ]);
+
+        $version = $persona->versions()->create(array_merge([
+            'version_number' => 1,
+            'public_profile_text' => 'Profil publik persona.',
+            'identity_json' => ['age' => '30', 'occupation' => 'Karyawan'],
+            'housing_context_json' => [],
+            'knowledge_beliefs_json' => [],
+            'personality_profile_json' => [],
+            'human_behavior_traits_json' => [],
+            'communication_style_json' => [],
+            'initial_dynamic_state_json' => [],
+            'state_sensitivity_json' => [],
+            'salience_overrides_json' => [],
+            'created_by' => $user->id,
+            'created_at' => now(),
+        ], $versionData));
+
+        $persona->update(['current_version_id' => $version->id]);
+
+        return $persona;
     }
 }

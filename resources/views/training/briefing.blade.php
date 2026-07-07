@@ -48,8 +48,14 @@
                     <div class="p-6">
                         <h3 class="text-lg font-medium text-gray-900 mb-4">Pilih Mode Persona</h3>
 
-                        <form method="POST" action="#" class="space-y-4">
+                        <form method="POST" action="{{ route('training.scenarios.sessions.store', $scenario) }}" class="space-y-4">
                             @csrf
+
+                            @if ($errors->any())
+                                <div class="p-4 bg-red-50 border border-red-200 rounded-lg text-sm text-red-700">
+                                    {{ $errors->first() }}
+                                </div>
+                            @endif
 
                             @php
                                 $modeLabels = [
@@ -113,11 +119,11 @@
                                 @endif
 
                                 <div class="pt-4">
-                                    <button type="submit" disabled
-                                        class="inline-flex items-center justify-center w-full px-4 py-2 bg-gray-400 border border-transparent rounded-md font-semibold text-xs text-white uppercase tracking-widest cursor-not-allowed">
+                                    <button type="submit"
+                                        class="inline-flex items-center justify-center w-full px-4 py-2 bg-sage-600 border border-transparent rounded-md font-semibold text-xs text-white uppercase tracking-widest hover:bg-sage-700 focus:bg-sage-700 active:bg-sage-800 focus:outline-none focus:ring-2 focus:ring-sage-500 focus:ring-offset-2 transition ease-in-out duration-150">
                                         Mulai Latihan
                                     </button>
-                                    <p class="text-xs text-gray-400 text-center mt-2">Fitur akan tersedia segera.</p>
+                                    <p class="text-xs text-gray-400 text-center mt-2">Sesi akan dibuat dulu. Token Gemini Live belum diproses di tahap ini.</p>
                                 </div>
                             @endif
                         </form>

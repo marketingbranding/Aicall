@@ -124,6 +124,8 @@ class HqPendingUserListTest extends TestCase
         $response = $this->actingAs($sales)
             ->get(route('dashboard'));
 
-        $response->assertDontSee('HQ');
+        $response->assertDontSee(route('hq.users.pending', absolute: false), false);
+        $response->assertDontSee('Pengguna');
+        $response->assertDontSee('Persona');
     }
 }

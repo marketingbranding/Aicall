@@ -31,6 +31,12 @@ Route::middleware(['auth', 'verified', 'account.active'])->prefix('training')->n
 
     Route::get('/scenarios/{scenario}', [\App\Http\Controllers\TrainingScenarioController::class, 'briefing'])
         ->name('scenarios.briefing');
+
+    Route::post('/scenarios/{scenario}/sessions', [\App\Http\Controllers\TrainingScenarioController::class, 'createSession'])
+        ->name('scenarios.sessions.store');
+
+    Route::get('/sessions/{publicId}/prepare', [\App\Http\Controllers\TrainingScenarioController::class, 'prepare'])
+        ->name('sessions.prepare');
 });
 
 Route::middleware(['auth', 'hq'])->prefix('hq')->name('hq.')->group(function () {

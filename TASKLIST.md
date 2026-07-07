@@ -267,13 +267,13 @@ Verification note 2026-07-07: Created Phase 7 data model and snapshot infrastruc
 - [x] Build Training Dashboard.
 - [x] Build Scenario selection (briefing page with persona mode selection).
 - [x] Display difficulty.
-- [ ] Implement CHOOSE_PERSONA server-side resolution + session creation.
-- [ ] Implement RANDOM_PERSONA server-side resolution + session creation.
-- [ ] Implement HIDDEN_PERSONA server-side resolution + session creation.
+- [x] Implement CHOOSE_PERSONA server-side resolution + session creation.
+- [x] Implement RANDOM_PERSONA server-side resolution + session creation.
+- [x] Implement HIDDEN_PERSONA server-side resolution + session creation.
 - [x] Build briefing screen.
-- [ ] Build pre-call screen.
+- [x] Build pre-call screen (preparation placeholder after session creation).
 - [ ] Implement microphone-permission UI.
-- [ ] Implement secure roleplay-session creation transaction.
+- [x] Implement secure roleplay-session creation transaction.
 - [x] Create Persona Snapshot (PersonaSnapshot DTO + SessionSnapshotService).
 - [x] Create Scenario Snapshot (ScenarioSnapshot DTO + SessionSnapshotService).
 - [x] Create Difficulty Snapshot (DifficultySnapshot DTO).
@@ -298,13 +298,15 @@ Verification note 2026-07-07: Created Phase 7 data model and snapshot infrastruc
 - [x] briefing does not expose hidden scenario fields (tested)
 - [x] briefing does not expose hidden persona data (tested)
 - [x] disabled personas not shown in CHOOSE_PERSONA list (tested)
-- [ ] unauthorized persona cannot be selected (Phase 7.3 — server-side validation + session creation)
-- [ ] same setup creates one application session (Phase 7.3)
+- [x] unauthorized persona cannot be selected (server-side validation + session creation)
+- [ ] same setup creates one application session (idempotency / duplicate-submit prevention)
 - [ ] snapshots are immutable (application-level contract, tested via factory)
 
 Verification note 2026-07-07: Built Training Dashboard with card layout listing active scenarios (name, difficulty, description, max duration, allowed persona modes). Used existing `account.active` middleware + `view-own-training` gate. Added `/training` route (training.dashboard) and "Latihan" nav link. Hidden fields (hidden_context, target_behaviors, sales_briefing, training_objective, success/failure conditions) are never loaded in controller query. All 597 tests pass (1753 assertions), `npm run build` succeeds (56 modules).
 
 Verification note 2026-07-07: Built scenario briefing page (GET /training/scenarios/{scenario}). Shows Sales-safe data: name, difficulty, description, sales briefing, max duration, allowed persona modes. Persona mode selection with radio buttons for each allowed mode. CHOOSE_PERSONA lists enabled active personas with public_profile_text and identity tags. Hidden scenario fields (hidden_context, target_behaviors, conditions, prohibited claims) and hidden persona data (human_behavior_traits, objections, hidden information) are never loaded or rendered. All 608 tests pass (1787 assertions), `npm run build` succeeds (56 modules).
+
+Verification note 2026-07-07: Implemented Phase 7.3 server-side persona resolution and RoleplaySession creation. Added POST /training/scenarios/{scenario}/sessions and GET /training/sessions/{publicId}/prepare. CHOOSE_PERSONA requires an assigned active persona; RANDOM_PERSONA and HIDDEN_PERSONA resolve an assigned active persona server-side. Creation runs in one DB transaction: validate mode, resolve persona, compile salience, merge rubric, compile actor instructions, create RoleplaySession, create immutable snapshot via SessionSnapshotService, hash and encrypt actor instructions. Preparation response exposes only safe session/scenario metadata and no persona hidden data, Director internals, or actor instructions. Fixed a flaky HQ nav assertion that matched random CSRF token text. All 618 tests pass (1840 assertions), `npm run build` succeeds (56 modules).
 
 ---
 
