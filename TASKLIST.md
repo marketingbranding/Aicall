@@ -218,7 +218,7 @@ Verification note 2026-07-07: Created `RoleplayInstruction` (DTO with 11 typed s
 - [x] Implement Conversation Phase Manager.
 - [ ] Implement Difficulty modifiers.
 - [x] Implement Director Note Planner.
-- [ ] Implement Director Note cooldown and duplicate suppression.
+- [x] Implement Director Note cooldown and duplicate suppression.
 - [ ] Implement AI-ending eligibility.
 - [ ] Implement Director Session Summary Builder.
 
@@ -230,7 +230,7 @@ Verification note 2026-07-07: Created `RoleplayInstruction` (DTO with 11 typed s
 - [x] state-to-behavior translation (13 tests)
 - [ ] persona multiplier effects
 - [x] diminishing returns
-- [ ] note cooldown
+- [x] note cooldown
 - [x] objection transitions
 - [x] disclosure transitions
 - [x] boundary transitions
@@ -249,6 +249,8 @@ Verification note 2026-07-07: Implemented BoundaryStateMachine with BoundaryStat
 Verification note 2026-07-07: Implemented ConversationPhaseManager with ConversationPhase enum (9 phases: OPENING, RAPPORT, DISCOVERY, NEED_EXPLORATION, EXPLANATION, OBJECTION_HANDLING, COMMITMENT, CLOSING, ENDING) and ConversationPhaseTransition DTO. Non-linear phase transitions driven by RoleplayEventType. Forward progression: OPENING→RAPPORT/DISCOVERY, RAPPORT→DISCOVERY/EXPLANATION/OBJECTION_HANDLING, DISCOVERY→NEED_EXPLORATION, NEED_EXPLORATION→EXPLANATION, EXPLANATION→COMMITMENT/OBJECTION_HANDLING, OBJECTION_HANDLING→COMMITMENT, COMMITMENT→CLOSING, CLOSING→ENDING. Backward from EXPLANATION/OBJECTION_HANDLING/COMMITMENT/CLOSING to DISCOVERY when new concerns arise. Premature closing detection via `isPrematureClosingEvent()` for AGGRESSIVE_CLOSING in early phases (OPENING—NEED_EXPLORATION). Configurable initial phase. Integrated into RoleplayDirectorEngine. All 437 tests pass (1308 assertions), `npm run build` succeeds (56 modules).
 
 Verification note 2026-07-07: Implemented DirectorNotePlanner with DirectorNote DTO. Planner consumes DirectorState (prev+new), BehaviorTranslationResult, objection/hidden-info/boundary/phase transitions. Generates notes for: objection transitions with directorNote, hidden info transitions with directorNote, boundary transitions with directorNote, phase changes (with 14 pre-mapped phase pairs + fallback), premature closing, and state threshold crossings (trust ≤30/≥70, irritation ≥60, engagement ≤30/≥70, confusion ≥60, pressure ≥60, anxiety ≥70 — only when newly crossed). Notes are qualitative Bahasa Indonesia, never expose numeric state. Deterministic output. All 490 tests pass (1467 assertions), `npm run build` succeeds (56 modules).
+
+Verification note 2026-07-07: Implemented DirectorNoteCooldown with turn-based cooldown and duplicate suppression. Cooldown periods per category: objection/hidden_info/boundary=4, state_threshold/phase_change=5, premature_closing=8, unknown=5. Duplicate detection via 3-entry text ring buffer. Notes with priority ≥3 (critical) bypass all cooldown/duplicate checks. Turn counter advances via `nextTurn()`. `reset()` clears all state. Deterministic output. All 513 tests pass (1511 assertions), `npm run build` succeeds (56 modules).
 
 ---
 
