@@ -220,7 +220,7 @@ Verification note 2026-07-07: Created `RoleplayInstruction` (DTO with 11 typed s
 - [x] Implement Director Note Planner.
 - [x] Implement Director Note cooldown and duplicate suppression.
 - [x] Implement AI-ending eligibility.
-- [ ] Implement Director Session Summary Builder.
+- [x] Implement Director Session Summary Builder.
 
 ### Phase 6 Tests
 
@@ -253,6 +253,8 @@ Verification note 2026-07-07: Implemented DirectorNotePlanner with DirectorNote 
 Verification note 2026-07-07: Implemented DirectorNoteCooldown with turn-based cooldown and duplicate suppression. Cooldown periods per category: objection/hidden_info/boundary=4, state_threshold/phase_change=5, premature_closing=8, unknown=5. Duplicate detection via 3-entry text ring buffer. Notes with priority ≥3 (critical) bypass all cooldown/duplicate checks. Turn counter advances via `nextTurn()`. `reset()` clears all state. Deterministic output. All 513 tests pass (1511 assertions), `npm run build` succeeds (56 modules).
 
 Verification note 2026-07-07: Implemented AiEndEligibility + AiEndEligibilityResult DTO. `evaluate()` accepts allowAiEndCall, DirectorState, boundaryStateValue, conversationPhaseValue, and event counts. Priority-ordered checks: not_enabled → boundary_termination → trust_collapse (≤20) → low_engagement (≤20) → high_pressure (≥80) → repeated_dismissal (≥2) → aggressive_closing_early (≥2 in pre-COMMITMENT phases) → repeated_unsupported_claim (≥3) → natural_ending (ENDING phase). Qualitative Bahasa Indonesia director note, no numeric state exposure. Deterministic output. All 536 tests pass (1553 assertions), `npm run build` succeeds (56 modules).
+
+Verification note 2026-07-07: Implemented DirectorSessionSummaryBuilder with DirectorSessionSummary and DirectorSessionEvent DTOs. Builder accumulates objection/hidden-info/boundary/phase transitions, state threshold notes, and AI-ending eligibility. Filters out rejected and self-transitions. Events sorted by turn in `build()`. Output is JSON-serializable via `toArray()`. Reset support for all accumulated state. All 556 tests pass (1609 assertions), `npm run build` succeeds (56 modules).
 
 ---
 
