@@ -15,6 +15,8 @@ class RoleplayRuntime {
         this.audioStreaming = false;
         this.conversationState = 'idle';
         this.transcriptEvents = [];
+        this.goAwayContext = null;
+        this.pendingToolCalls = [];
         this.userSpeechTimer = null;
         this.waitingForAiTimer = null;
         this.interruptionResetTimer = null;
@@ -107,6 +109,8 @@ class RoleplayRuntime {
             onAudioChunk: (chunk) => this.enqueueAiAudio(chunk),
             onTranscriptEvent: (event) => this.handleTranscriptEvent(event),
             onInterrupted: () => this.clearAiPlayback('model_interruption'),
+            onGoAway: (context) => this.handleGoAway(context),
+            onToolCall: (call) => this.handleToolCall(call),
             onError: () => {
                 this.stopSessionAudio('audio_stream_failed');
                 this.setState('live_connection_failed');
@@ -206,12 +210,42 @@ class RoleplayRuntime {
         this.transcriptList.appendChild(item);
     }
 
+    handleGoAway(context) {
+        this.goAwayContext = context;
+        this.root.dataset.liveGoaway = 'true';
+        this.root.dataset.liveGoawayReason = context.reason || 'unknown';
+
+        if (this.liveDebug && context.reconnectToken) {
+            this.root.dataset.liveGoawayReconnect = 'available';
+        }
+
+        if (this.liveDebug && typeof console !== 'undefined') {
+            console.debug('Live GoAway:', context.reason);
+        }
+    }
+
+    handleToolCall(call) {
+        if (!call?.name) return;
+
+        this.pendingToolCalls.push(call);
+        this.root.dataset.liveToolcalls = String(this.pendingToolCalls.length);
+        this.root.dataset.liveToolcallLatest = call.name;
+
+        if (this.liveDebug && typeof console !== 'undefined') {
+            console.debug('Live tool call:', call.name, call.args);
+        }
+    }
+
     stopSessionAudio(state = 'audio_stream_stopped') {
         this.stopAudioStreaming(state);
         this.playbackQueue?.close();
         this.playbackQueue = null;
         this.clearConversationTimers();
         this.root.dataset.bargeIn = 'idle';
+        this.goAwayContext = null;
+        this.root.dataset.liveGoaway = 'false';
+        this.root.dataset.liveGoawayReason = 'none';
+        this.root.dataset.liveGoawayReconnect = 'none';
         this.setConversationState('idle');
     }
 
@@ -257,6 +291,13 @@ class RoleplayRuntime {
 
         this.clearConversationTimers();
         this.root.dataset.bargeIn = 'idle';
+        this.goAwayContext = null;
+        this.root.dataset.liveGoaway = 'false';
+        this.root.dataset.liveGoawayReason = 'none';
+        this.root.dataset.liveGoawayReconnect = 'none';
+        this.pendingToolCalls = [];
+        this.root.dataset.liveToolcalls = '0';
+        this.root.dataset.liveToolcallLatest = 'none';
         this.setConversationState('idle');
     }
 

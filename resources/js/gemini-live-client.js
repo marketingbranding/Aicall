@@ -11,7 +11,7 @@ class GeminiLiveClient {
         this.setupComplete = false;
     }
 
-    connect({ onOpen, onSetupComplete, onAudioChunk, onTranscriptEvent, onInterrupted, onError, onClose } = {}) {
+    connect({ onOpen, onSetupComplete, onAudioChunk, onTranscriptEvent, onInterrupted, onGoAway, onToolCall, onError, onClose } = {}) {
         if (!this.token || !this.model || !this.WebSocketClass) {
             onError?.({ kind: 'configuration' });
             return;
@@ -26,18 +26,30 @@ class GeminiLiveClient {
 
         this.socket.addEventListener('message', (event) => {
             const message = this.parseMessage(event.data);
+            if (!message) return;
+
+            const goAway = this.extractGoAway(message);
+            const interrupted = this.isInterrupted(message);
+            const audioChunks = this.extractAudioChunks(message);
+            const transcriptEvents = this.extractTranscriptEvents(message);
+            const toolCalls = this.extractToolCalls(message);
 
             if (message?.setupComplete) {
                 this.setupComplete = true;
                 onSetupComplete?.();
             }
 
-            this.extractAudioChunks(message).forEach((chunk) => onAudioChunk?.(chunk));
-            this.extractTranscriptEvents(message).forEach((transcriptEvent) => onTranscriptEvent?.(transcriptEvent));
+            if (goAway) {
+                onGoAway?.(goAway);
+            }
 
-            if (this.isInterrupted(message)) {
+            if (interrupted) {
                 onInterrupted?.();
             }
+
+            audioChunks.forEach((chunk) => onAudioChunk?.(chunk));
+            transcriptEvents.forEach((event) => onTranscriptEvent?.(event));
+            toolCalls.forEach((call) => onToolCall?.(call));
 
             if (this.debug) {
                 this.logMessageShape(message);
@@ -182,6 +194,41 @@ class GeminiLiveClient {
         if (explicit.includes('final') || explicit.includes('complete')) return 'final';
 
         return 'partial';
+    }
+
+    extractGoAway(message) {
+        const ga = message?.goAway || message?.go_away || null;
+        if (!ga) return null;
+
+        return {
+            reason: ga.reason || 'unknown',
+            reconnectToken: ga.reconnectToken || ga.reconnect_token || null,
+            timeout: ga.timeout || null,
+        };
+    }
+
+    extractToolCalls(message) {
+        const parts = message?.serverContent?.modelTurn?.parts
+            || message?.server_content?.model_turn?.parts
+            || [];
+
+        const fromParts = parts
+            .map((part) => part.functionCall || part.function_call || null)
+            .filter(Boolean)
+            .map((fc) => ({
+                name: fc.name || fc.functionName || '',
+                args: fc.args || fc.arguments || {},
+            }));
+
+        const msgLevel = message?.toolCall || message?.tool_call || null;
+        if (msgLevel) {
+            fromParts.push({
+                name: msgLevel.name || msgLevel.functionName || '',
+                args: msgLevel.args || msgLevel.arguments || {},
+            });
+        }
+
+        return fromParts;
     }
 
     isInterrupted(message) {

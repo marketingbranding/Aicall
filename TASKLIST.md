@@ -333,7 +333,7 @@ Verification note 2026-07-07: Enforced RoleplaySessionSnapshot immutability at t
 - [x] Clear stale playback on model interruption.
 - [x] Implement input transcription parsing.
 - [x] Implement output transcription parsing.
-- [ ] Process all Live event content parts correctly.
+- [x] Process all Live event content parts correctly.
 - [ ] Implement AI-first scenario opening.
 - [ ] Implement 14-minute warning.
 - [ ] Implement 15-minute maximum ending flow.
@@ -364,6 +364,8 @@ Verification note 2026-07-08: Implemented browser-only speaking/listening state 
 Verification note 2026-07-08: Implemented browser barge-in/interruption handling. Runtime now clears current and queued AI PCM playback when Gemini reports model interruption or when local microphone RMS crosses the speech threshold while AI playback is active. The microphone stream stays live, conversation state moves through `interrupted`, and a transient `data-barge-in` hook distinguishes `user_barge_in` from `model_interruption` without exposing audio, token, transcript, or private prompt data. Added prepare-page render coverage for interruption hooks and copy. `php artisan test` passed 649 tests / 1971 assertions; `npm run build` passed.
 
 Verification note 2026-07-08: Implemented browser-only Live transcript event handling. `GeminiLiveClient` now extracts input and output transcription payloads from camelCase and snake_case Live server events, normalizing each event to `{ speaker: USER|AI, text, status: partial|final, timestamp }`. `RoleplayRuntime` stores normalized transcript events only in browser memory, updates non-sensitive DOM counters/status, and renders transcript text only inside a hidden debug panel when `data-live-debug="true"`. No transcript persistence, evaluation, Director Notes, private prompt data exposure, token logging, or transcript content logging was added. Added prepare-page render coverage for transcript hooks while existing actor-instruction, token, API-key, and hidden-persona non-exposure tests remain in place. `php artisan test` passed 650 tests / 1980 assertions; `npm run build` passed.
+
+Verification note 2026-07-08: `GeminiLiveClient` message handler now processes all supported Live event parts in stable order: setupComplete, goAway lifecycle, interruption, audio chunks, transcript events, tool calls. `extractGoAway()` recognizes `goAway` / `go_away` with reason and reconnectToken in both camelCase and snake_case. `extractToolCalls()` recognizes `functionCall` parts in `serverContent.modelTurn.parts[]` and message-level `toolCall`, extracting name and args. Runtime wires `onGoAway` and `onToolCall` callbacks with memory-only state tracking and non-sensitive `data-live-goaway` / `data-live-toolcalls` DOM attributes. No session resumption, Director Notes, transcript persistence, or Director state processing was implemented. Added prepare-page render coverage for event part processing hooks. Existing audio, transcription, interruption, token, API-key, and hidden-persona non-exposure behavior is preserved. `php artisan test` passed 651 tests / 1987 assertions; `npm run build` passed.
 
 - [ ] real Indonesian voice conversation works
 - [ ] user can interrupt AI
