@@ -43,6 +43,9 @@ Route::middleware(['auth', 'verified', 'account.active'])->prefix('training')->n
 
     Route::patch('/sessions/{publicId}/status', [\App\Http\Controllers\RoleplaySessionStatusController::class, 'update'])
         ->name('sessions.status.update');
+
+    Route::post('/sessions/{publicId}/transcript', [\App\Http\Controllers\RoleplayTranscriptController::class, 'store'])
+        ->name('sessions.transcript.store');
 });
 
 Route::middleware(['auth', 'hq'])->prefix('hq')->name('hq.')->group(function () {

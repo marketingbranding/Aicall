@@ -334,12 +334,12 @@ Verification note 2026-07-07: Enforced RoleplaySessionSnapshot immutability at t
 - [x] Implement input transcription parsing.
 - [x] Implement output transcription parsing.
 - [x] Process all Live event content parts correctly.
-- [ ] Implement AI-first scenario opening.
-- [ ] Implement 14-minute warning.
-- [ ] Implement 15-minute maximum ending flow.
-- [ ] Implement Live lifecycle/GoAway handling.
-- [ ] Implement official session resumption.
-- [ ] Preserve same Laravel roleplay session through reconnect.
+- [x] Implement AI-first scenario opening.
+- [x] Implement 14-minute warning.
+- [x] Implement 15-minute maximum ending flow.
+- [x] Implement Live lifecycle/GoAway handling.
+- [x] Implement official session resumption.
+- [x] Preserve same Laravel roleplay session through reconnect.
 
 ### Phase 8 Manual Verification
 
