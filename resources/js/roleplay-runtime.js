@@ -13,10 +13,16 @@ class RoleplayRuntime {
         this.microphoneCapture = null;
         this.playbackQueue = null;
         this.audioStreaming = false;
+        this.conversationState = 'idle';
+        this.userSpeechTimer = null;
+        this.waitingForAiTimer = null;
         this.liveDebug = root.dataset.liveDebug === 'true';
 
         this.status = root.querySelector('[data-runtime-status]');
         this.detail = root.querySelector('[data-runtime-detail]');
+        this.conversationStatus = root.querySelector('[data-conversation-status]');
+        this.conversationDetail = root.querySelector('[data-conversation-detail]');
+        this.conversationIndicators = root.querySelectorAll('[data-conversation-indicator]');
         this.startButton = root.querySelector('[data-roleplay-start]');
         this.stopButton = root.querySelector('[data-roleplay-stop]');
     }
@@ -121,6 +127,9 @@ class RoleplayRuntime {
             onIdle: () => {
                 if (this.state === 'ai_speaking' || this.state === 'playback_error') {
                     this.setState('playback_idle');
+                    if (this.audioStreaming) {
+                        this.setConversationState('listening');
+                    }
                 }
             },
             onError: () => this.setState('playback_error'),
@@ -130,17 +139,30 @@ class RoleplayRuntime {
     }
 
     enqueueAiAudio(chunk) {
+        if (this.conversationState !== 'ai_speaking') {
+            this.setConversationState('thinking');
+        }
+
         this.ensurePlaybackQueue()?.enqueue(chunk);
     }
 
     clearAiPlayback() {
         this.playbackQueue?.clear();
+        this.setConversationState('interrupted');
+
+        window.setTimeout(() => {
+            if (this.conversationState === 'interrupted' && this.audioStreaming) {
+                this.setConversationState('listening');
+            }
+        }, 900);
     }
 
     stopSessionAudio(state = 'audio_stream_stopped') {
         this.stopAudioStreaming(state);
         this.playbackQueue?.close();
         this.playbackQueue = null;
+        this.clearConversationTimers();
+        this.setConversationState('idle');
     }
 
     async startMicrophoneCapture() {
@@ -153,7 +175,10 @@ class RoleplayRuntime {
 
                 if (!this.liveClient?.sendAudioChunk(chunk)) {
                     this.stopAudioStreaming('audio_stream_failed');
+                    return;
                 }
+
+                this.handleMicrophoneActivity(chunk.level || 0);
             },
         });
 
@@ -161,6 +186,7 @@ class RoleplayRuntime {
             await this.microphoneCapture.start();
             this.audioStreaming = true;
             this.setState('audio_streaming');
+            this.setConversationState('listening');
         } catch (_) {
             this.microphoneCapture?.stop();
             this.microphoneCapture = null;
@@ -178,6 +204,43 @@ class RoleplayRuntime {
         if (wasStreaming) {
             this.setState(state);
         }
+
+        this.clearConversationTimers();
+        this.setConversationState('idle');
+    }
+
+    handleMicrophoneActivity(level) {
+        if (this.state === 'ai_speaking' || this.conversationState === 'interrupted') return;
+
+        if (level >= 0.015) {
+            this.setConversationState('user_speaking');
+            window.clearTimeout(this.userSpeechTimer);
+            window.clearTimeout(this.waitingForAiTimer);
+
+            this.userSpeechTimer = window.setTimeout(() => {
+                if (!this.audioStreaming || this.state === 'ai_speaking') return;
+
+                this.setConversationState('waiting_for_ai');
+                this.waitingForAiTimer = window.setTimeout(() => {
+                    if (this.conversationState === 'waiting_for_ai' && this.audioStreaming) {
+                        this.setConversationState('listening');
+                    }
+                }, 1200);
+            }, 700);
+
+            return;
+        }
+
+        if (this.conversationState === 'idle' && this.audioStreaming) {
+            this.setConversationState('listening');
+        }
+    }
+
+    clearConversationTimers() {
+        window.clearTimeout(this.userSpeechTimer);
+        window.clearTimeout(this.waitingForAiTimer);
+        this.userSpeechTimer = null;
+        this.waitingForAiTimer = null;
     }
 
     stopMicrophoneCapture() {
@@ -229,6 +292,12 @@ class RoleplayRuntime {
             this.root.dataset.aiPlayback = 'idle';
         }
 
+        if (state === 'ai_speaking') {
+            this.setConversationState('ai_speaking');
+        } else if (state === 'playback_error') {
+            this.setConversationState('idle');
+        }
+
         const messages = {
             idle: ['Siap memulai', 'Setelah mikrofon siap, tekan Mulai Sesi untuk menyiapkan koneksi Live.'],
             requesting_credentials: ['Menyiapkan koneksi', 'Mengambil kredensial sementara. Panggilan belum dimulai.'],
@@ -268,6 +337,33 @@ class RoleplayRuntime {
         }
 
         this.stopButton?.classList.toggle('hidden', !this.audioStreaming);
+    }
+
+    setConversationState(state) {
+        this.conversationState = state;
+        this.root.dataset.conversationState = state;
+
+        const messages = {
+            idle: ['Diam', 'Belum ada percakapan aktif.'],
+            listening: ['Mendengarkan', 'Sistem siap menangkap suara Anda. Bicara dengan ritme normal.'],
+            user_speaking: ['Anda sedang berbicara', 'Suara Anda sedang dikirim ke sesi Live.'],
+            waiting_for_ai: ['Menunggu respons', 'Memberi waktu singkat agar AI merespons.'],
+            thinking: ['AI menyiapkan respons', 'Tunggu sebentar.'],
+            ai_speaking: ['AI sedang berbicara', 'Dengarkan respons pelanggan simulasi.'],
+            interrupted: ['Interupsi terdeteksi', 'Audio AI lama dihentikan agar percakapan tetap alami.'],
+        };
+
+        const [status, detail] = messages[state] || messages.idle;
+        if (this.conversationStatus) this.conversationStatus.textContent = status;
+        if (this.conversationDetail) this.conversationDetail.textContent = detail;
+
+        this.conversationIndicators.forEach((element) => {
+            const active = element.dataset.conversationIndicator === state;
+            element.classList.toggle('bg-sage-600', active);
+            element.classList.toggle('text-white', active);
+            element.classList.toggle('bg-stone-100', !active);
+            element.classList.toggle('text-gray-600', !active);
+        });
     }
 }
 

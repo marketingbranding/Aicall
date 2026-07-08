@@ -50,7 +50,10 @@ class MicrophoneCapture {
             if (!this.capturing) return;
 
             const input = event.inputBuffer.getChannelData(0);
-            this.onAudioChunk?.(prepareGeminiLivePcm16(input, this.audioContext.sampleRate));
+            this.onAudioChunk?.({
+                ...prepareGeminiLivePcm16(input, this.audioContext.sampleRate),
+                level: calculateRms(input),
+            });
         };
 
         this.source.connect(this.processor);
@@ -83,6 +86,18 @@ class MicrophoneCapture {
         this.silentGain = null;
     }
 
+}
+
+function calculateRms(samples) {
+    if (!samples.length) return 0;
+
+    let sum = 0;
+
+    for (let index = 0; index < samples.length; index += 1) {
+        sum += samples[index] * samples[index];
+    }
+
+    return Math.sqrt(sum / samples.length);
 }
 
 export { MicrophoneCapture };

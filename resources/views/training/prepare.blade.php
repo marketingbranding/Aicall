@@ -109,6 +109,7 @@
                         data-microphone-capture="pending"
                         data-audio-stream="pending"
                         data-ai-playback="pending"
+                        data-conversation-state="idle"
                         data-input-audio-format="pcm16-16000-le"
                         data-output-audio-format="pcm16-24000-le"
                         data-live-debug="false"
@@ -137,6 +138,25 @@
                         <p class="mt-4 text-xs text-gray-500">
                             Kredensial sementara hanya disimpan di memori browser. Mikrofon dikirim sebagai PCM 16 kHz setelah sesi Live tersambung. Audio Gemini diputar sebagai PCM 24 kHz tanpa menyimpan transkrip.
                         </p>
+
+                        <div class="mt-5 rounded-xl border border-stone-100 bg-stone-50 p-4" data-conversation-state-panel>
+                            <div class="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+                                <div>
+                                    <p class="text-xs font-semibold uppercase tracking-wide text-sage-700">Status Percakapan</p>
+                                    <p class="mt-1 text-sm font-medium text-gray-900" data-conversation-status>Diam</p>
+                                    <p class="mt-1 text-xs text-gray-600" data-conversation-detail>Belum ada percakapan aktif.</p>
+                                </div>
+
+                                <div class="flex flex-wrap gap-2 text-xs" aria-label="Indikator status percakapan">
+                                    <span class="rounded-full bg-stone-100 px-3 py-1 text-gray-600" data-conversation-indicator="listening">Mendengarkan</span>
+                                    <span class="rounded-full bg-stone-100 px-3 py-1 text-gray-600" data-conversation-indicator="user_speaking">Anda bicara</span>
+                                    <span class="rounded-full bg-stone-100 px-3 py-1 text-gray-600" data-conversation-indicator="waiting_for_ai">Menunggu AI</span>
+                                    <span class="rounded-full bg-stone-100 px-3 py-1 text-gray-600" data-conversation-indicator="thinking">AI menyiapkan</span>
+                                    <span class="rounded-full bg-stone-100 px-3 py-1 text-gray-600" data-conversation-indicator="ai_speaking">AI bicara</span>
+                                    <span class="rounded-full bg-stone-100 px-3 py-1 text-gray-600" data-conversation-indicator="interrupted">Terinterupsi</span>
+                                </div>
+                            </div>
+                        </div>
                     </div>
 
                     <div>
