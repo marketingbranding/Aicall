@@ -325,7 +325,7 @@ Verification note 2026-07-07: Enforced RoleplaySessionSnapshot immutability at t
 - [x] Implement browser `RoleplayRuntime`.
 - [x] Implement `GeminiLiveClient`.
 - [x] Implement microphone capture.
-- [ ] Implement PCM conversion/resampling according to current API requirements.
+- [x] Implement PCM conversion/resampling according to current API requirements.
 - [ ] Implement streaming microphone audio.
 - [ ] Implement AI PCM playback queue.
 - [ ] Implement speaking/listening state events.
@@ -352,6 +352,8 @@ Verification note 2026-07-08: Implemented prepare-page browser `RoleplayRuntime`
 Verification note 2026-07-08: Implemented browser `GeminiLiveClient` handshake foundation only. The runtime now uses the in-memory ephemeral token to open the official constrained Gemini Live WebSocket endpoint with `access_token`, sends a setup-only message for the configured model/audio modality, and handles `connecting_live`, `live_connected`, `live_connection_failed`, and `live_closed` states with calm Bahasa Indonesia messages. Debug message-shape logging is disabled by default and never logs credentials. No microphone audio streaming, audio playback, transcription handling, tool handling, or Director events were implemented. Added server-rendered tests for Live client hooks and that no token/API key/private data is present in prepare HTML. `php artisan test --filter=TrainingBriefingTest` passed 36 tests / 147 assertions; `npm run build` passed.
 
 Verification note 2026-07-08: Implemented browser microphone capture foundation. Added a `MicrophoneCapture` module using `navigator.mediaDevices.getUserMedia` and Web Audio API, starts capture only after Live setup completes, prepares in-browser PCM16 chunks at 16 kHz through a no-op callback boundary, and does not stream audio to Gemini yet. Runtime now handles `microphone_capturing`, `microphone_capture_failed`, and `microphone_stopped`; microphone tracks/audio nodes are stopped on Live close/failure and page unload/pagehide. Added prepare-page render coverage for microphone capture hooks while preserving hidden persona, actor instruction, token, and API-key non-exposure checks. `php artisan test` passed 645 tests / 1948 assertions; `npm run build` passed.
+
+Verification note 2026-07-08: Implemented isolated browser PCM utilities for Gemini Live input requirements. Added `audio-pcm-utils.js` with `resampleTo16k`, `float32ToPcm16`, `prepareGeminiLivePcm16`, and `encodeBase64`; PCM16 output is written explicitly little-endian via `DataView` and returned as an `ArrayBuffer` with metadata `audio/pcm;rate=16000`, `LINEAR16`, and `littleEndian: true`. `MicrophoneCapture` now delegates conversion/resampling to these utilities and still does not stream audio to Gemini. No JS test runner is configured, so verification is build/manual-boundary based plus existing PHP render/security tests. `php artisan test` and `npm run build` passed.
 
 - [ ] real Indonesian voice conversation works
 - [ ] user can interrupt AI

@@ -685,7 +685,7 @@ class TrainingBriefingTest extends TestCase
 
         $response->assertOk();
         $response->assertSee('data-microphone-capture="pending"', false);
-        $response->assertSee('data-input-audio-format="pcm16-16000"', false);
+        $response->assertSee('data-input-audio-format="pcm16-16000-le"', false);
         $response->assertSee('PCM 16 kHz');
     }
 

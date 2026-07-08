@@ -107,7 +107,7 @@
                         data-roleplay-runtime
                         data-gemini-live-client="pending"
                         data-microphone-capture="pending"
-                        data-input-audio-format="pcm16-16000"
+                        data-input-audio-format="pcm16-16000-le"
                         data-live-debug="false"
                         data-runtime-state="idle"
                         data-credentials-url="{{ route('training.sessions.live-credentials.store', $session->public_id) }}">
