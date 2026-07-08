@@ -19,6 +19,10 @@ class RoleplayRuntime {
         this.pendingToolCalls = [];
         this.firstSpeaker = 'USER';
         this.aiOpeningTriggered = false;
+        this.reconnectToken = null;
+        this.reconnectAttempts = 0;
+        this.maxReconnectAttempts = 2;
+        this._reconnectPending = false;
         this.userSpeechTimer = null;
         this.waitingForAiTimer = null;
         this.interruptionResetTimer = null;
@@ -120,16 +124,7 @@ class RoleplayRuntime {
                 this.stopSessionAudio('audio_stream_failed');
                 this.setState('live_connection_failed');
             },
-            onClose: (event) => {
-                this.stopSessionAudio('audio_stream_stopped');
-
-                if (this.state === 'live_connection_failed') return;
-
-                this.setState(
-                    event.expired ? 'live_connection_failed' : 'live_closed',
-                    event.expired ? 'Kredensial sementara sudah tidak berlaku. Muat ulang persiapan sesi lalu coba lagi.' : null,
-                );
-            },
+            onClose: (event) => this.handleClose(event),
         });
     }
 
@@ -229,16 +224,23 @@ class RoleplayRuntime {
 
     handleGoAway(context) {
         this.goAwayContext = context;
+        this.reconnectToken = context.reconnectToken || null;
+        this._reconnectPending = true;
         this.root.dataset.liveGoaway = 'true';
         this.root.dataset.liveGoawayReason = context.reason || 'unknown';
+        this.root.dataset.liveGoawayReconnect = this.reconnectToken ? 'available' : 'none';
 
-        if (this.liveDebug && context.reconnectToken) {
-            this.root.dataset.liveGoawayReconnect = 'available';
-        }
+        this.playbackQueue?.clear();
+        this.playbackQueue?.close();
+        this.playbackQueue = null;
 
-        if (this.liveDebug && typeof console !== 'undefined') {
-            console.debug('Live GoAway:', context.reason);
-        }
+        this.audioStreaming = false;
+        this.stopMicrophoneCapture();
+        this.clearConversationTimers();
+        this.root.dataset.bargeIn = 'idle';
+        this.setConversationState('idle');
+
+        this.setState('live_reconnecting');
     }
 
     handleToolCall(call) {
@@ -251,6 +253,75 @@ class RoleplayRuntime {
         if (this.liveDebug && typeof console !== 'undefined') {
             console.debug('Live tool call:', call.name, call.args);
         }
+    }
+
+    handleClose(event) {
+        if (this._reconnectPending && this.reconnectToken) {
+            this._reconnectPending = false;
+            this.reconnectLive();
+            return;
+        }
+
+        this.stopSessionAudio('audio_stream_stopped');
+
+        if (this.state === 'live_connection_failed' || this.state === 'live_reconnection_failed') return;
+
+        this.setState(
+            event.expired ? 'live_connection_failed' : 'live_closed',
+            event.expired ? 'Kredensial sementara sudah tidak berlaku. Muat ulang persiapan sesi lalu coba lagi.' : null,
+        );
+    }
+
+    reconnectLive() {
+        this._reconnectPending = false;
+        this.reconnectAttempts++;
+
+        if (this.reconnectAttempts > this.maxReconnectAttempts) {
+            this.setState('live_reconnection_failed', 'Gagal menyambung ulang setelah beberapa kali percobaan.');
+            return;
+        }
+
+        this.liveClient?.close();
+        this.liveClient = null;
+
+        this.liveClient = new GeminiLiveClient({
+            token: this.ephemeralToken,
+            model: this.credentials.model,
+            liveConfig: this.credentials.live_config || {},
+            debug: this.liveDebug,
+        });
+
+        const currentReconnectToken = this.reconnectToken;
+
+        this.liveClient.connect({
+            reconnectToken: currentReconnectToken,
+            onSetupComplete: () => {
+                this.reconnectAttempts = 0;
+                this.reconnectToken = null;
+                this.root.dataset.liveGoaway = 'false';
+                this.root.dataset.liveGoawayReason = 'none';
+                this.root.dataset.liveGoawayReconnect = 'none';
+                this.root.dataset.liveReconnect = 'none';
+
+                this.setState('live_reconnected');
+                this.startMicrophoneCapture();
+
+                window.setTimeout(() => {
+                    if (this.state === 'live_reconnected') {
+                        this.setState('live_connected');
+                    }
+                }, 2000);
+            },
+            onAudioChunk: (chunk) => this.enqueueAiAudio(chunk),
+            onTranscriptEvent: (event) => this.handleTranscriptEvent(event),
+            onInterrupted: () => this.clearAiPlayback('model_interruption'),
+            onGoAway: (context) => this.handleGoAway(context),
+            onToolCall: (call) => this.handleToolCall(call),
+            onError: () => {
+                this.setState('live_reconnection_failed');
+            },
+            onClose: (event) => this.handleClose(event),
+        });
     }
 
     stopSessionAudio(state = 'audio_stream_stopped') {
@@ -412,6 +483,14 @@ class RoleplayRuntime {
             this.root.dataset.aiPlayback = 'idle';
         }
 
+        if (state === 'live_reconnecting') {
+            this.root.dataset.liveReconnect = 'connecting';
+        } else if (state === 'live_reconnected') {
+            this.root.dataset.liveReconnect = 'connected';
+        } else if (state === 'live_reconnection_failed') {
+            this.root.dataset.liveReconnect = 'failed';
+        }
+
         if (state === 'ai_speaking') {
             this.setConversationState('ai_speaking');
         } else if (state === 'playback_error') {
@@ -426,6 +505,9 @@ class RoleplayRuntime {
             connecting_live: ['Menghubungkan', 'Membuka sesi Live. Audio belum dikirim.'],
             live_connected: ['Sesi Live tersambung', 'Handshake Live berhasil. Pengiriman audio akan ditambahkan pada tahap berikutnya.'],
             live_connection_failed: ['Koneksi belum berhasil', customDetail || 'Sesi Live belum bisa tersambung. Coba lagi sebentar lagi.'],
+            live_reconnecting: ['Menghubungkan kembali...', 'Koneksi Live terputus. Mencoba menyambung ulang secara otomatis.'],
+            live_reconnected: ['Koneksi dipulihkan', 'Sesi Live berhasil tersambung kembali. Mikrofon akan diaktifkan kembali.'],
+            live_reconnection_failed: ['Gagal menghubungkan kembali', customDetail || 'Sesi Live gagal tersambung kembali. Muat ulang halaman dan coba lagi.'],
             live_closed: ['Koneksi Live tertutup', 'Sesi Live sudah tertutup. Muat ulang halaman jika ingin mencoba lagi.'],
             microphone_capturing: ['Mikrofon aktif', 'Audio mikrofon sedang disiapkan sebagai PCM 16 kHz di browser. Audio belum dikirim ke Gemini.'],
             microphone_capture_failed: ['Mikrofon belum aktif', 'Mikrofon belum bisa mulai merekam. Periksa izin browser dan perangkat mikrofon.'],

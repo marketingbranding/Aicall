@@ -11,13 +11,13 @@ class GeminiLiveClient {
         this.setupComplete = false;
     }
 
-    connect({ onOpen, onSetupComplete, onAudioChunk, onTranscriptEvent, onInterrupted, onGoAway, onToolCall, onError, onClose } = {}) {
+    connect({ onOpen, onSetupComplete, onAudioChunk, onTranscriptEvent, onInterrupted, onGoAway, onToolCall, onError, onClose, reconnectToken } = {}) {
         if (!this.token || !this.model || !this.WebSocketClass) {
             onError?.({ kind: 'configuration' });
             return;
         }
 
-        this.socket = new this.WebSocketClass(this.websocketUrl());
+        this.socket = new this.WebSocketClass(this.websocketUrl(reconnectToken));
 
         this.socket.addEventListener('open', () => {
             onOpen?.();
@@ -81,10 +81,16 @@ class GeminiLiveClient {
         return this.setupComplete && this.socket?.readyState === 1;
     }
 
-    websocketUrl() {
+    websocketUrl(reconnectToken) {
         const baseUrl = 'wss://generativelanguage.googleapis.com/ws/google.ai.generativelanguage.v1beta.GenerativeService.BidiGenerateContentConstrained';
 
-        return `${baseUrl}?access_token=${encodeURIComponent(this.token)}`;
+        let url = `${baseUrl}?access_token=${encodeURIComponent(this.token)}`;
+
+        if (reconnectToken) {
+            url += `&reconnect_token=${encodeURIComponent(reconnectToken)}`;
+        }
+
+        return url;
     }
 
     sendSetup() {

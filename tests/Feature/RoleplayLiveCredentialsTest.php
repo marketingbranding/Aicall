@@ -84,13 +84,43 @@ class RoleplayLiveCredentialsTest extends TestCase
         Http::fake();
         config(['gemini.api_key' => 'server-secret-key']);
         $user = User::factory()->sales()->active()->create();
-        $session = $this->createSessionWithSnapshot($user, RoleplaySessionStatus::ACTIVE);
+        $session = $this->createSessionWithSnapshot($user, RoleplaySessionStatus::ENDING);
 
         $this->actingAs($user)
             ->postJson(route('training.sessions.live-credentials.store', $session->public_id))
             ->assertStatus(409);
 
         Http::assertNothingSent();
+    }
+
+    public function test_ready_session_can_request_token(): void
+    {
+        Http::fake([
+            'generativelanguage.googleapis.com/*' => Http::response(['name' => 'authTokens/test-token'], 200),
+        ]);
+        config(['gemini.api_key' => 'server-secret-key']);
+        $user = User::factory()->sales()->active()->create();
+        $session = $this->createSessionWithSnapshot($user, RoleplaySessionStatus::READY);
+
+        $this->actingAs($user)
+            ->postJson(route('training.sessions.live-credentials.store', $session->public_id))
+            ->assertOk()
+            ->assertJsonPath('ephemeral_token', 'authTokens/test-token');
+    }
+
+    public function test_active_session_can_request_token(): void
+    {
+        Http::fake([
+            'generativelanguage.googleapis.com/*' => Http::response(['name' => 'authTokens/test-token'], 200),
+        ]);
+        config(['gemini.api_key' => 'server-secret-key']);
+        $user = User::factory()->sales()->active()->create();
+        $session = $this->createSessionWithSnapshot($user, RoleplaySessionStatus::ACTIVE);
+
+        $this->actingAs($user)
+            ->postJson(route('training.sessions.live-credentials.store', $session->public_id))
+            ->assertOk()
+            ->assertJsonPath('ephemeral_token', 'authTokens/test-token');
     }
 
     public function test_response_does_not_expose_permanent_api_key_or_actor_instructions(): void

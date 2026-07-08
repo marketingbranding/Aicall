@@ -119,6 +119,7 @@
                         data-live-goaway-reconnect="none"
                         data-live-toolcalls="0"
                         data-live-toolcall-latest="none"
+                        data-live-reconnect="none"
                         data-conversation-state="idle"
                         data-input-audio-format="pcm16-16000-le"
                         data-output-audio-format="pcm16-24000-le"

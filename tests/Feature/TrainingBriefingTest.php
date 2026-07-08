@@ -788,6 +788,20 @@ class TrainingBriefingTest extends TestCase
         $response->assertSee('panggilan fungsi');
     }
 
+    public function test_prepare_page_includes_session_resumption_hooks(): void
+    {
+        $user = User::factory()->sales()->active()->create();
+        $session = RoleplaySession::factory()->forUser($user)->create();
+        RoleplaySessionSnapshot::factory()->create(['roleplay_session_id' => $session->id]);
+
+        $response = $this->actingAs($user)->get(route('training.sessions.prepare', $session->public_id));
+
+        $response->assertOk();
+        $response->assertSee('data-live-reconnect="none"', false);
+        $response->assertSee('data-live-goaway="false"', false);
+        $response->assertSee('data-live-goaway-reconnect="none"', false);
+    }
+
     public function test_prepare_page_does_not_write_ephemeral_token_to_dom(): void
     {
         $user = User::factory()->sales()->active()->create();
