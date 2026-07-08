@@ -1,4 +1,5 @@
 import { GeminiLiveClient } from './gemini-live-client';
+import { MicrophoneCapture } from './microphone-capture';
 
 class RoleplayRuntime {
     constructor(root) {
@@ -8,6 +9,7 @@ class RoleplayRuntime {
         this.ephemeralToken = null;
         this.credentials = null;
         this.liveClient = null;
+        this.microphoneCapture = null;
         this.liveDebug = root.dataset.liveDebug === 'true';
 
         this.status = root.querySelector('[data-runtime-status]');
@@ -22,6 +24,9 @@ class RoleplayRuntime {
         document.addEventListener('roleplay:microphone-allowed', () => {
             this.startButton?.classList.remove('hidden');
         });
+
+        window.addEventListener('beforeunload', () => this.stopMicrophoneCapture());
+        window.addEventListener('pagehide', () => this.stopMicrophoneCapture());
     }
 
     async requestCredentials() {
@@ -76,9 +81,17 @@ class RoleplayRuntime {
         });
 
         this.liveClient.connect({
-            onSetupComplete: () => this.setState('live_connected'),
-            onError: () => this.setState('live_connection_failed'),
+            onSetupComplete: () => {
+                this.setState('live_connected');
+                this.startMicrophoneCapture();
+            },
+            onError: () => {
+                this.stopMicrophoneCapture();
+                this.setState('live_connection_failed');
+            },
             onClose: (event) => {
+                this.stopMicrophoneCapture();
+
                 if (this.state === 'live_connection_failed') return;
 
                 this.setState(
@@ -87,6 +100,37 @@ class RoleplayRuntime {
                 );
             },
         });
+    }
+
+    async startMicrophoneCapture() {
+        if (this.microphoneCapture) return;
+
+        this.microphoneCapture = new MicrophoneCapture({
+            targetSampleRate: 16000,
+            onAudioChunk: () => {
+                // Streaming to Gemini is intentionally implemented in the next Phase 8 task.
+            },
+        });
+
+        try {
+            await this.microphoneCapture.start();
+            this.setState('microphone_capturing');
+        } catch (_) {
+            this.microphoneCapture?.stop();
+            this.microphoneCapture = null;
+            this.setState('microphone_capture_failed');
+        }
+    }
+
+    stopMicrophoneCapture() {
+        if (!this.microphoneCapture) return;
+
+        this.microphoneCapture.stop();
+        this.microphoneCapture = null;
+
+        if (this.state === 'microphone_capturing') {
+            this.setState('microphone_stopped');
+        }
     }
 
     handleCredentialError(status) {
@@ -107,6 +151,14 @@ class RoleplayRuntime {
         this.state = state;
         this.root.dataset.runtimeState = state;
 
+        if (state === 'microphone_capturing') {
+            this.root.dataset.microphoneCapture = 'capturing';
+        } else if (state === 'microphone_capture_failed') {
+            this.root.dataset.microphoneCapture = 'failed';
+        } else if (state === 'microphone_stopped') {
+            this.root.dataset.microphoneCapture = 'stopped';
+        }
+
         const messages = {
             idle: ['Siap memulai', 'Setelah mikrofon siap, tekan Mulai Sesi untuk menyiapkan koneksi Live.'],
             requesting_credentials: ['Menyiapkan koneksi', 'Mengambil kredensial sementara. Panggilan belum dimulai.'],
@@ -116,6 +168,9 @@ class RoleplayRuntime {
             live_connected: ['Sesi Live tersambung', 'Handshake Live berhasil. Pengiriman audio akan ditambahkan pada tahap berikutnya.'],
             live_connection_failed: ['Koneksi belum berhasil', customDetail || 'Sesi Live belum bisa tersambung. Coba lagi sebentar lagi.'],
             live_closed: ['Koneksi Live tertutup', 'Sesi Live sudah tertutup. Muat ulang halaman jika ingin mencoba lagi.'],
+            microphone_capturing: ['Mikrofon aktif', 'Audio mikrofon sedang disiapkan sebagai PCM 16 kHz di browser. Audio belum dikirim ke Gemini.'],
+            microphone_capture_failed: ['Mikrofon belum aktif', 'Mikrofon belum bisa mulai merekam. Periksa izin browser dan perangkat mikrofon.'],
+            microphone_stopped: ['Mikrofon berhenti', 'Capture mikrofon sudah dihentikan dan track browser sudah ditutup.'],
         };
 
         const [status, detail] = messages[state] || messages.idle;
@@ -128,6 +183,7 @@ class RoleplayRuntime {
                 'credentials_ready',
                 'connecting_live',
                 'live_connected',
+                'microphone_capturing',
             ].includes(state);
             this.startButton.textContent = state === 'requesting_credentials' ? 'Menyiapkan...' : 'Mulai Sesi';
         }

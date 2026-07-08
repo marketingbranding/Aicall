@@ -675,6 +675,20 @@ class TrainingBriefingTest extends TestCase
         $response->assertSee(route('training.sessions.live-credentials.store', $session->public_id), false);
     }
 
+    public function test_prepare_page_includes_microphone_capture_hooks(): void
+    {
+        $user = User::factory()->sales()->active()->create();
+        $session = RoleplaySession::factory()->forUser($user)->create();
+        RoleplaySessionSnapshot::factory()->create(['roleplay_session_id' => $session->id]);
+
+        $response = $this->actingAs($user)->get(route('training.sessions.prepare', $session->public_id));
+
+        $response->assertOk();
+        $response->assertSee('data-microphone-capture="pending"', false);
+        $response->assertSee('data-input-audio-format="pcm16-16000"', false);
+        $response->assertSee('PCM 16 kHz');
+    }
+
     public function test_prepare_page_does_not_write_ephemeral_token_to_dom(): void
     {
         $user = User::factory()->sales()->active()->create();

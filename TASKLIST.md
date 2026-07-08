@@ -324,7 +324,7 @@ Verification note 2026-07-07: Enforced RoleplaySessionSnapshot immutability at t
 - [x] Verify short-lived token/config restrictions.
 - [x] Implement browser `RoleplayRuntime`.
 - [x] Implement `GeminiLiveClient`.
-- [ ] Implement microphone capture.
+- [x] Implement microphone capture.
 - [ ] Implement PCM conversion/resampling according to current API requirements.
 - [ ] Implement streaming microphone audio.
 - [ ] Implement AI PCM playback queue.
@@ -350,6 +350,8 @@ Verification note 2026-07-08: Implemented backend-only Gemini Live ephemeral tok
 Verification note 2026-07-08: Implemented prepare-page browser `RoleplayRuntime` foundation only. Added a Vite-loaded runtime module with states `idle`, `requesting_credentials`, `credentials_ready`, and `credentials_failed`; `Mulai Sesi` appears after microphone permission succeeds and requests credentials from `POST /training/sessions/{publicId}/live-credentials`. Ephemeral token is held only in memory and is not logged or written to the DOM/storage. No Gemini Live WebSocket connection, microphone audio streaming, or audio playback was implemented. Added server-rendered tests for runtime DOM hooks, credentials endpoint URL, and no permanent API key/private data in prepare HTML. `php artisan test --filter=TrainingBriefingTest` passed 35 tests / 141 assertions.
 
 Verification note 2026-07-08: Implemented browser `GeminiLiveClient` handshake foundation only. The runtime now uses the in-memory ephemeral token to open the official constrained Gemini Live WebSocket endpoint with `access_token`, sends a setup-only message for the configured model/audio modality, and handles `connecting_live`, `live_connected`, `live_connection_failed`, and `live_closed` states with calm Bahasa Indonesia messages. Debug message-shape logging is disabled by default and never logs credentials. No microphone audio streaming, audio playback, transcription handling, tool handling, or Director events were implemented. Added server-rendered tests for Live client hooks and that no token/API key/private data is present in prepare HTML. `php artisan test --filter=TrainingBriefingTest` passed 36 tests / 147 assertions; `npm run build` passed.
+
+Verification note 2026-07-08: Implemented browser microphone capture foundation. Added a `MicrophoneCapture` module using `navigator.mediaDevices.getUserMedia` and Web Audio API, starts capture only after Live setup completes, prepares in-browser PCM16 chunks at 16 kHz through a no-op callback boundary, and does not stream audio to Gemini yet. Runtime now handles `microphone_capturing`, `microphone_capture_failed`, and `microphone_stopped`; microphone tracks/audio nodes are stopped on Live close/failure and page unload/pagehide. Added prepare-page render coverage for microphone capture hooks while preserving hidden persona, actor instruction, token, and API-key non-exposure checks. `php artisan test` passed 645 tests / 1948 assertions; `npm run build` passed.
 
 - [ ] real Indonesian voice conversation works
 - [ ] user can interrupt AI
