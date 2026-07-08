@@ -676,6 +676,19 @@ class TrainingBriefingTest extends TestCase
         $response->assertSee(route('training.sessions.live-credentials.store', $session->public_id), false);
     }
 
+    public function test_prepare_page_includes_transcript_endpoint_hook(): void
+    {
+        $user = User::factory()->sales()->active()->create();
+        $session = RoleplaySession::factory()->forUser($user)->create();
+        RoleplaySessionSnapshot::factory()->create(['roleplay_session_id' => $session->id]);
+
+        $response = $this->actingAs($user)->get(route('training.sessions.prepare', $session->public_id));
+
+        $response->assertOk();
+        $response->assertSee('data-transcript-url', false);
+        $response->assertSee(route('training.sessions.transcript.store', $session->public_id), false);
+    }
+
     public function test_prepare_page_includes_microphone_capture_hooks(): void
     {
         $user = User::factory()->sales()->active()->create();
@@ -768,7 +781,7 @@ class TrainingBriefingTest extends TestCase
         $response->assertSee('data-live-transcript-panel', false);
         $response->assertSee('aria-hidden="true"', false);
         $response->assertSee('data-live-transcript-list', false);
-        $response->assertSee('Transkrip tidak dikirim ke server pada tahap ini.');
+        $response->assertSee('Transkrip yang dikirim ke server tidak ditampilkan di panel ini.');
     }
 
     public function test_prepare_page_includes_event_part_processing_hooks(): void
@@ -785,7 +798,7 @@ class TrainingBriefingTest extends TestCase
         $response->assertSee('data-live-goaway-reconnect="none"', false);
         $response->assertSee('data-live-toolcalls="0"', false);
         $response->assertSee('data-live-toolcall-latest="none"', false);
-        $response->assertSee('panggilan fungsi');
+        $response->assertSee('Transkrip final dikirim ke server secara berurutan untuk disimpan', false);
     }
 
     public function test_prepare_page_includes_session_resumption_hooks(): void

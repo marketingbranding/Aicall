@@ -1,12 +1,14 @@
 import { GeminiLiveClient } from './gemini-live-client';
 import { AiPcmPlaybackQueue } from './ai-pcm-playback-queue';
 import { MicrophoneCapture } from './microphone-capture';
+import { TranscriptEventBuffer } from './transcript-event-buffer';
 
 class RoleplayRuntime {
     constructor(root) {
         this.root = root;
         this.sessionId = root.dataset.sessionId || '';
         this.credentialsUrl = root.dataset.credentialsUrl;
+        this.transcriptUrl = root.dataset.transcriptUrl || root.dataset.credentialsUrl?.replace('/live-credentials', '/transcript') || '';
         this.statusUrl = this.credentialsUrl.replace('/live-credentials', '/status');
         this._reportedStatus = null;
         this.state = 'idle';
@@ -40,6 +42,7 @@ class RoleplayRuntime {
         this.sessionWarningShown = false;
         this.aiWarningSent = false;
         this.liveDebug = root.dataset.liveDebug === 'true';
+        this.transcriptBuffer = null;
 
         this.status = root.querySelector('[data-runtime-status]');
         this.detail = root.querySelector('[data-runtime-detail]');
@@ -108,6 +111,7 @@ class RoleplayRuntime {
         this._clearStaleReconnectTokens();
         this._loadReconnectToken();
         this.initTranscriptDebugPanel();
+        this.initTranscriptBuffer();
         this.startButton?.addEventListener('click', () => {
             this.ensurePlaybackQueue()?.prime();
             this.requestCredentials();
@@ -360,6 +364,8 @@ class RoleplayRuntime {
     handleSessionTimeLimit() {
         if (this.sessionTimedOut) return;
         this.sessionTimedOut = true;
+        this.transcriptBuffer?.flush();
+        this.transcriptBuffer?.stop();
         this._clearReconnectToken();
         this.clearSessionTimer();
         this.reportStatus('ENDING', 'TIME_LIMIT');
@@ -382,6 +388,7 @@ class RoleplayRuntime {
         };
 
         this.transcriptEvents.push(normalized);
+        this.transcriptBuffer?.receive(normalized);
         this.root.dataset.transcriptEvents = String(this.transcriptEvents.length);
         this.root.dataset.transcriptLatestSpeaker = normalized.speaker;
         this.root.dataset.transcriptLatestStatus = normalized.status;
@@ -400,6 +407,18 @@ class RoleplayRuntime {
 
         this.transcriptPanel.classList.remove('hidden');
         this.transcriptPanel.setAttribute('aria-hidden', 'false');
+    }
+
+    initTranscriptBuffer() {
+        if (this.transcriptBuffer || !this.transcriptUrl) return;
+
+        this.transcriptBuffer = new TranscriptEventBuffer({
+            transcriptUrl: this.transcriptUrl,
+            debug: this.liveDebug,
+            onSubmitted: (data) => {
+                this.root.dataset.transcriptSubmitted = String(this.transcriptBuffer.getCurrentSequence());
+            },
+        });
     }
 
     renderTranscriptDebugEvent(event) {
@@ -546,6 +565,8 @@ class RoleplayRuntime {
     }
 
     stopSessionAudio(state = 'audio_stream_stopped') {
+        this.transcriptBuffer?.flush();
+        this.transcriptBuffer?.stop();
         this._clearReconnectToken();
         this.stopAudioStreaming(state);
         this.playbackQueue?.close();
@@ -582,6 +603,7 @@ class RoleplayRuntime {
         try {
             await this.microphoneCapture.start();
             this.audioStreaming = true;
+            this.transcriptBuffer?.start();
             this.setState('audio_streaming');
             this.setConversationState('listening');
             this.startSessionTimer();

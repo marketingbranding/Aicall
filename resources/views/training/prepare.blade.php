@@ -128,7 +128,8 @@
                         data-runtime-state="idle"
                         data-session-warning="false"
                         data-session-duration-seconds="{{ $maxDurationSeconds }}"
-                        data-credentials-url="{{ route('training.sessions.live-credentials.store', $session->public_id) }}">
+                        data-credentials-url="{{ route('training.sessions.live-credentials.store', $session->public_id) }}"
+                        data-transcript-url="{{ route('training.sessions.transcript.store', $session->public_id) }}">
                         <div class="flex flex-col gap-5 sm:flex-row sm:items-start sm:justify-between">
                             <div class="space-y-2">
                                 <p class="text-xs font-semibold uppercase tracking-wide text-sage-700">Koneksi Live</p>
@@ -150,7 +151,7 @@
                         </div>
 
                         <p class="mt-4 text-xs text-gray-500">
-                            Kredensial sementara hanya disimpan di memori browser. Mikrofon dikirim sebagai PCM 16 kHz setelah sesi Live tersambung. Audio Gemini diputar sebagai PCM 24 kHz dan dihentikan saat Anda menyela. Transkrip dan panggilan fungsi disadari di memori browser tanpa dikirim ke server pada tahap ini.
+                            Kredensial sementara hanya disimpan di memori browser. Mikrofon dikirim sebagai PCM 16 kHz setelah sesi Live tersambung. Audio Gemini diputar sebagai PCM 24 kHz dan dihentikan saat Anda menyela. Transkrip final dikirim ke server secara berurutan untuk disimpan; transkrip parsial disangga di memori browser tanpa dikirim per perubahan kecil.
                         </p>
 
                         <div class="mt-5 flex items-center justify-center gap-3" data-session-timer-panel>
@@ -187,7 +188,7 @@
 
                         <div class="hidden mt-5 rounded-xl border border-stone-100 bg-stone-50 p-4" data-live-transcript-panel aria-hidden="true">
                             <p class="text-xs font-semibold uppercase tracking-wide text-sage-700">Debug Transkrip Live</p>
-                            <p class="mt-1 text-xs text-gray-600">Panel ini hanya aktif saat debug Live dinyalakan. Transkrip tidak dikirim ke server pada tahap ini.</p>
+                            <p class="mt-1 text-xs text-gray-600">Panel ini hanya aktif saat debug Live dinyalakan. Transkrip yang dikirim ke server tidak ditampilkan di panel ini.</p>
                             <ol class="mt-3 space-y-2 text-xs text-gray-700" data-live-transcript-list></ol>
                         </div>
                     </div>
