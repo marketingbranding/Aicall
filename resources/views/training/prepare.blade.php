@@ -125,6 +125,7 @@
                         data-output-audio-format="pcm16-24000-le"
                         data-live-debug="false"
                         data-runtime-state="idle"
+                        data-session-warning="false"
                         data-session-duration-seconds="{{ $maxDurationSeconds }}"
                         data-credentials-url="{{ route('training.sessions.live-credentials.store', $session->public_id) }}">
                         <div class="flex flex-col gap-5 sm:flex-row sm:items-start sm:justify-between">
@@ -150,6 +151,19 @@
                         <p class="mt-4 text-xs text-gray-500">
                             Kredensial sementara hanya disimpan di memori browser. Mikrofon dikirim sebagai PCM 16 kHz setelah sesi Live tersambung. Audio Gemini diputar sebagai PCM 24 kHz dan dihentikan saat Anda menyela. Transkrip dan panggilan fungsi disadari di memori browser tanpa dikirim ke server pada tahap ini.
                         </p>
+
+                        <div class="mt-5 flex items-center justify-center gap-3" data-session-timer-panel>
+                            <span class="text-2xl font-mono font-semibold tabular-nums text-gray-900" data-session-timer>--:--</span>
+                            <span class="text-xs text-gray-500">tersisa</span>
+                        </div>
+
+                        <div data-session-warning-banner class="hidden mt-3 rounded-lg bg-amber-50 border border-amber-200 px-4 py-3 text-sm text-amber-800" role="alert">
+                            Sesi hampir mencapai batas 15 menit.
+                        </div>
+
+                        <div data-live-reconnect-indicator class="hidden mt-3 rounded-lg bg-sage-50 border border-sage-200 px-4 py-3 text-sm text-sage-800" role="status">
+                            Menghubungkan kembali...
+                        </div>
 
                         <div class="mt-5 rounded-xl border border-stone-100 bg-stone-50 p-4" data-conversation-state-panel>
                             <div class="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">

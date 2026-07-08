@@ -800,6 +800,8 @@ class TrainingBriefingTest extends TestCase
         $response->assertSee('data-live-reconnect="none"', false);
         $response->assertSee('data-live-goaway="false"', false);
         $response->assertSee('data-live-goaway-reconnect="none"', false);
+        $response->assertSee('data-live-reconnect-indicator', false);
+        $response->assertSee('Menghubungkan kembali...', false);
     }
 
     public function test_prepare_page_does_not_write_ephemeral_token_to_dom(): void
@@ -826,6 +828,34 @@ class TrainingBriefingTest extends TestCase
 
         $response->assertOk();
         $response->assertSee('data-session-duration-seconds', false);
+    }
+
+    public function test_prepare_page_includes_session_timer_ui(): void
+    {
+        $user = User::factory()->sales()->active()->create();
+        $session = RoleplaySession::factory()->forUser($user)->create();
+        RoleplaySessionSnapshot::factory()->create(['roleplay_session_id' => $session->id]);
+
+        $response = $this->actingAs($user)->get(route('training.sessions.prepare', $session->public_id));
+
+        $response->assertOk();
+        $response->assertSee('data-session-timer-panel', false);
+        $response->assertSee('data-session-timer', false);
+        $response->assertSee('data-session-warning="false"', false);
+        $response->assertSee('tersisa', false);
+    }
+
+    public function test_prepare_page_includes_warning_banner(): void
+    {
+        $user = User::factory()->sales()->active()->create();
+        $session = RoleplaySession::factory()->forUser($user)->create();
+        RoleplaySessionSnapshot::factory()->create(['roleplay_session_id' => $session->id]);
+
+        $response = $this->actingAs($user)->get(route('training.sessions.prepare', $session->public_id));
+
+        $response->assertOk();
+        $response->assertSee('data-session-warning-banner', false);
+        $response->assertSee('Sesi hampir mencapai batas 15 menit.');
     }
 
     public function test_prepare_page_does_not_expose_permanent_api_key(): void

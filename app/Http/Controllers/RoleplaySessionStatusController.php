@@ -13,8 +13,9 @@ class RoleplaySessionStatusController extends Controller
     private const array TRANSITIONS = [
         'CREATED' => ['PREPARING', 'FAILED'],
         'PREPARING' => ['READY', 'FAILED', 'PREPARING'],
-        'READY' => ['ACTIVE', 'ENDING', 'FAILED', 'READY'],
-        'ACTIVE' => ['ENDING', 'FAILED', 'ACTIVE'],
+        'READY' => ['ACTIVE', 'RECONNECTING', 'ENDING', 'FAILED', 'READY'],
+        'ACTIVE' => ['RECONNECTING', 'ENDING', 'FAILED', 'ACTIVE'],
+        'RECONNECTING' => ['ACTIVE', 'FAILED', 'RECONNECTING'],
         'ENDING' => ['COMPLETED', 'FAILED', 'ENDING'],
         'COMPLETED' => [],
         'FAILED' => [],

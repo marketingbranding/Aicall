@@ -243,6 +243,109 @@ class RoleplaySessionStatusTest extends TestCase
         $this->assertSame('2026-07-08 12:00:00', $session->started_at->format('Y-m-d H:i:s'));
     }
 
+    public function test_ready_to_reconnecting_is_allowed(): void
+    {
+        $user = User::factory()->sales()->active()->create();
+        $session = $this->createSession($user, RoleplaySessionStatus::READY);
+
+        $this->actingAs($user)
+            ->patchJson(route('training.sessions.status.update', $session->public_id), [
+                'status' => 'RECONNECTING',
+            ])
+            ->assertOk()
+            ->assertJsonPath('session.status', 'RECONNECTING');
+    }
+
+    public function test_active_to_reconnecting_is_allowed(): void
+    {
+        $user = User::factory()->sales()->active()->create();
+        $session = $this->createSession($user, RoleplaySessionStatus::ACTIVE);
+
+        $this->actingAs($user)
+            ->patchJson(route('training.sessions.status.update', $session->public_id), [
+                'status' => 'RECONNECTING',
+            ])
+            ->assertOk()
+            ->assertJsonPath('session.status', 'RECONNECTING');
+    }
+
+    public function test_reconnecting_to_active_preserves_started_at(): void
+    {
+        $user = User::factory()->sales()->active()->create();
+        $session = $this->createSession($user, RoleplaySessionStatus::RECONNECTING);
+        $session->update(['started_at' => '2026-07-08 12:00:00']);
+
+        $this->actingAs($user)
+            ->patchJson(route('training.sessions.status.update', $session->public_id), [
+                'status' => 'ACTIVE',
+            ])
+            ->assertOk()
+            ->assertJsonPath('session.status', 'ACTIVE');
+
+        $session->refresh();
+        $this->assertSame('2026-07-08 12:00:00', $session->started_at->format('Y-m-d H:i:s'));
+        $this->assertNull($session->ended_at);
+    }
+
+    public function test_reconnecting_to_failed_stores_failure_ending(): void
+    {
+        $user = User::factory()->sales()->active()->create();
+        $session = $this->createSession($user, RoleplaySessionStatus::RECONNECTING);
+
+        $this->actingAs($user)
+            ->patchJson(route('training.sessions.status.update', $session->public_id), [
+                'status' => 'FAILED',
+                'ending_reason' => 'Reconnection failed',
+            ])
+            ->assertOk()
+            ->assertJsonPath('session.status', 'FAILED')
+            ->assertJsonPath('session.ending_type', 'FAILURE');
+
+        $session->refresh();
+        $this->assertSame(EndingType::FAILURE->value, $session->ending_type);
+        $this->assertSame('Reconnection failed', $session->ending_reason);
+        $this->assertNotNull($session->ended_at);
+    }
+
+    public function test_reconnecting_self_transition_is_allowed(): void
+    {
+        $user = User::factory()->sales()->active()->create();
+        $session = $this->createSession($user, RoleplaySessionStatus::RECONNECTING);
+
+        $this->actingAs($user)
+            ->patchJson(route('training.sessions.status.update', $session->public_id), [
+                'status' => 'RECONNECTING',
+            ])
+            ->assertOk()
+            ->assertJsonPath('session.status', 'RECONNECTING');
+    }
+
+    public function test_created_to_reconnecting_is_rejected(): void
+    {
+        $user = User::factory()->sales()->active()->create();
+        $session = $this->createSession($user, RoleplaySessionStatus::CREATED);
+
+        $this->actingAs($user)
+            ->patchJson(route('training.sessions.status.update', $session->public_id), [
+                'status' => 'RECONNECTING',
+            ])
+            ->assertStatus(422)
+            ->assertJsonPath('error', 'invalid_transition');
+    }
+
+    public function test_reconnecting_to_ending_is_rejected(): void
+    {
+        $user = User::factory()->sales()->active()->create();
+        $session = $this->createSession($user, RoleplaySessionStatus::RECONNECTING);
+
+        $this->actingAs($user)
+            ->patchJson(route('training.sessions.status.update', $session->public_id), [
+                'status' => 'ENDING',
+            ])
+            ->assertStatus(422)
+            ->assertJsonPath('error', 'invalid_transition');
+    }
+
     public function test_invalid_status_value_rejected(): void
     {
         $user = User::factory()->sales()->active()->create();

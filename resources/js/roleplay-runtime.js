@@ -32,8 +32,12 @@ class RoleplayRuntime {
         this.sessionWarningMs = this.sessionDurationMs - 60000;
         this.sessionTimer = null;
         this.sessionWarningTimer = null;
+        this.sessionTimerDisplay = null;
         this.sessionTimedOut = false;
         this.sessionStartedAt = null;
+        this.sessionEndTime = null;
+        this.sessionWarningShown = false;
+        this.aiWarningSent = false;
         this.liveDebug = root.dataset.liveDebug === 'true';
 
         this.status = root.querySelector('[data-runtime-status]');
@@ -45,6 +49,9 @@ class RoleplayRuntime {
         this.transcriptList = root.querySelector('[data-live-transcript-list]');
         this.startButton = root.querySelector('[data-roleplay-start]');
         this.stopButton = root.querySelector('[data-roleplay-stop]');
+        this.timerDisplay = root.querySelector('[data-session-timer]');
+        this.warningBanner = root.querySelector('[data-session-warning-banner]');
+        this.reconnectIndicator = root.querySelector('[data-live-reconnect-indicator]');
     }
 
     init() {
@@ -67,6 +74,7 @@ class RoleplayRuntime {
         window.addEventListener('pagehide', () => this.stopSessionAudio('audio_stream_stopped'));
 
         this.root.dataset.sessionWarning = 'false';
+        this.updateTimerDisplay();
     }
 
     async requestCredentials() {
@@ -204,14 +212,70 @@ class RoleplayRuntime {
 
         this.clearSessionTimer();
         this.sessionStartedAt = Date.now();
+        this.sessionEndTime = Date.now() + this.sessionDurationMs;
+        this.sessionWarningShown = false;
+        this.aiWarningSent = false;
 
         this.sessionWarningTimer = window.setTimeout(() => {
             this.root.dataset.sessionWarning = 'true';
+            this.sessionWarningShown = true;
+            this.showWarningBanner();
+            this.sendAiWarning();
         }, this.sessionWarningMs);
 
         this.sessionTimer = window.setTimeout(() => {
             this.handleSessionTimeLimit();
         }, this.sessionDurationMs);
+
+        this.startTimerDisplay();
+    }
+
+    startTimerDisplay() {
+        this.clearTimerDisplay();
+        this.sessionTimerDisplay = window.setInterval(() => {
+            this.updateTimerDisplay();
+        }, 200);
+    }
+
+    clearTimerDisplay() {
+        window.clearInterval(this.sessionTimerDisplay);
+        this.sessionTimerDisplay = null;
+    }
+
+    updateTimerDisplay() {
+        if (!this.timerDisplay) return;
+
+        if (!this.sessionEndTime || this.sessionTimedOut) {
+            this.timerDisplay.textContent = '--:--';
+            return;
+        }
+
+        const remaining = Math.max(0, this.sessionEndTime - Date.now());
+        const seconds = Math.ceil(remaining / 1000);
+        const minutes = Math.floor(seconds / 60);
+        const secs = seconds % 60;
+        this.timerDisplay.textContent = `${minutes}:${String(secs).padStart(2, '0')}`;
+    }
+
+    showWarningBanner() {
+        if (!this.warningBanner) return;
+        this.warningBanner.classList.remove('hidden');
+    }
+
+    hideWarningBanner() {
+        if (!this.warningBanner) return;
+        this.warningBanner.classList.add('hidden');
+    }
+
+    sendAiWarning() {
+        if (this.aiWarningSent) return;
+        if (!this.liveClient?.isReady()) return;
+
+        this.aiWarningSent = true;
+        this.liveClient.sendClientContent(
+            [{ role: 'user', parts: [{ text: '[peringatan: 1 menit tersisa]' }] }],
+            true,
+        );
     }
 
     clearSessionTimer() {
@@ -219,7 +283,13 @@ class RoleplayRuntime {
         window.clearTimeout(this.sessionWarningTimer);
         this.sessionTimer = null;
         this.sessionWarningTimer = null;
+        this.sessionEndTime = null;
+        this.sessionWarningShown = false;
+        this.aiWarningSent = false;
+        this.clearTimerDisplay();
+        this.updateTimerDisplay();
         this.root.dataset.sessionWarning = 'false';
+        this.hideWarningBanner();
     }
 
     handleSessionTimeLimit() {
@@ -231,6 +301,8 @@ class RoleplayRuntime {
         this.stopSessionAudio('time_limit_ending');
         this.liveClient?.close();
         this.liveClient = null;
+        this.clearTimerDisplay();
+        this.updateTimerDisplay();
     }
 
     handleTranscriptEvent(event) {
@@ -290,6 +362,7 @@ class RoleplayRuntime {
         this.root.dataset.bargeIn = 'idle';
         this.setConversationState('idle');
 
+        this.reportStatus('RECONNECTING');
         this.setState('live_reconnecting');
     }
 
@@ -353,6 +426,7 @@ class RoleplayRuntime {
         this.reconnectAttempts++;
 
         if (this.reconnectAttempts > this.maxReconnectAttempts) {
+            this.reportStatus('FAILED', 'FAILURE', 'Reconnection failed after max attempts');
             this.setState('live_reconnection_failed', 'Gagal menyambung ulang setelah beberapa kali percobaan.');
             return;
         }
@@ -379,6 +453,7 @@ class RoleplayRuntime {
                 this.root.dataset.liveGoawayReconnect = 'none';
                 this.root.dataset.liveReconnect = 'none';
 
+                this.reportStatus('ACTIVE');
                 this.setState('live_reconnected');
                 this.startMicrophoneCapture();
 
@@ -394,6 +469,7 @@ class RoleplayRuntime {
             onGoAway: (context) => this.handleGoAway(context),
             onToolCall: (call) => this.handleToolCall(call),
             onError: () => {
+                this.reportStatus('FAILED', 'FAILURE', 'Reconnection connection error');
                 this.setState('live_reconnection_failed');
             },
             onClose: (event) => this.handleClose(event),
@@ -568,10 +644,15 @@ class RoleplayRuntime {
 
         if (state === 'live_reconnecting') {
             this.root.dataset.liveReconnect = 'connecting';
+            this.reconnectIndicator?.classList.remove('hidden');
         } else if (state === 'live_reconnected') {
             this.root.dataset.liveReconnect = 'connected';
+            this.reconnectIndicator?.classList.add('hidden');
         } else if (state === 'live_reconnection_failed') {
             this.root.dataset.liveReconnect = 'failed';
+            this.reconnectIndicator?.classList.add('hidden');
+        } else {
+            this.reconnectIndicator?.classList.add('hidden');
         }
 
         if (state === 'ai_speaking') {
