@@ -26,6 +26,12 @@ class RoleplayRuntime {
         this.userSpeechTimer = null;
         this.waitingForAiTimer = null;
         this.interruptionResetTimer = null;
+        this.sessionDurationMs = (parseInt(root.dataset.sessionDurationSeconds, 10) || 900) * 1000;
+        this.sessionWarningMs = this.sessionDurationMs - 60000;
+        this.sessionTimer = null;
+        this.sessionWarningTimer = null;
+        this.sessionTimedOut = false;
+        this.sessionStartedAt = null;
         this.liveDebug = root.dataset.liveDebug === 'true';
 
         this.status = root.querySelector('[data-runtime-status]');
@@ -54,6 +60,8 @@ class RoleplayRuntime {
 
         window.addEventListener('beforeunload', () => this.stopSessionAudio('audio_stream_stopped'));
         window.addEventListener('pagehide', () => this.stopSessionAudio('audio_stream_stopped'));
+
+        this.root.dataset.sessionWarning = 'false';
     }
 
     async requestCredentials() {
@@ -183,6 +191,39 @@ class RoleplayRuntime {
         );
     }
 
+    startSessionTimer() {
+        if (this.sessionTimedOut || this.sessionTimer) return;
+
+        this.clearSessionTimer();
+        this.sessionStartedAt = Date.now();
+
+        this.sessionWarningTimer = window.setTimeout(() => {
+            this.root.dataset.sessionWarning = 'true';
+        }, this.sessionWarningMs);
+
+        this.sessionTimer = window.setTimeout(() => {
+            this.handleSessionTimeLimit();
+        }, this.sessionDurationMs);
+    }
+
+    clearSessionTimer() {
+        window.clearTimeout(this.sessionTimer);
+        window.clearTimeout(this.sessionWarningTimer);
+        this.sessionTimer = null;
+        this.sessionWarningTimer = null;
+        this.root.dataset.sessionWarning = 'false';
+    }
+
+    handleSessionTimeLimit() {
+        if (this.sessionTimedOut) return;
+        this.sessionTimedOut = true;
+        this.clearSessionTimer();
+
+        this.stopSessionAudio('time_limit_ending');
+        this.liveClient?.close();
+        this.liveClient = null;
+    }
+
     handleTranscriptEvent(event) {
         if (!event?.speaker || !event?.text) return;
 
@@ -256,6 +297,8 @@ class RoleplayRuntime {
     }
 
     handleClose(event) {
+        if (this.sessionTimedOut) return;
+
         if (this._reconnectPending && this.reconnectToken) {
             this._reconnectPending = false;
             this.reconnectLive();
@@ -329,6 +372,7 @@ class RoleplayRuntime {
         this.playbackQueue?.close();
         this.playbackQueue = null;
         this.clearConversationTimers();
+        this.clearSessionTimer();
         this.root.dataset.bargeIn = 'idle';
         this.goAwayContext = null;
         this.root.dataset.liveGoaway = 'false';
@@ -361,6 +405,7 @@ class RoleplayRuntime {
             this.audioStreaming = true;
             this.setState('audio_streaming');
             this.setConversationState('listening');
+            this.startSessionTimer();
         } catch (_) {
             this.microphoneCapture?.stop();
             this.microphoneCapture = null;
@@ -380,6 +425,7 @@ class RoleplayRuntime {
         }
 
         this.clearConversationTimers();
+        this.clearSessionTimer();
         this.root.dataset.bargeIn = 'idle';
         this.goAwayContext = null;
         this.root.dataset.liveGoaway = 'false';
@@ -518,6 +564,7 @@ class RoleplayRuntime {
             ai_speaking: ['AI sedang berbicara', 'Audio Gemini Live sedang diputar berurutan dari antrean PCM 24 kHz.'],
             playback_error: ['Audio AI bermasalah', 'Audio balasan belum bisa diputar. Sesi dapat dimulai ulang dari halaman persiapan.'],
             playback_idle: ['Audio AI selesai', 'Antrean audio Gemini kosong. Mikrofon tetap berjalan jika sesi masih aktif.'],
+            time_limit_ending: ['Batas waktu tercapai', 'Sesi latihan telah mencapai batas 15 menit.'],
         };
 
         const [status, detail] = messages[state] || messages.idle;

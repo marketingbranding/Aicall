@@ -816,6 +816,18 @@ class TrainingBriefingTest extends TestCase
         $response->assertDontSee('access_token=');
     }
 
+    public function test_prepare_page_includes_duration_hooks(): void
+    {
+        $user = User::factory()->sales()->active()->create();
+        $session = RoleplaySession::factory()->forUser($user)->create();
+        RoleplaySessionSnapshot::factory()->create(['roleplay_session_id' => $session->id]);
+
+        $response = $this->actingAs($user)->get(route('training.sessions.prepare', $session->public_id));
+
+        $response->assertOk();
+        $response->assertSee('data-session-duration-seconds', false);
+    }
+
     public function test_prepare_page_does_not_expose_permanent_api_key(): void
     {
         config(['gemini.api_key' => 'server-secret-key']);

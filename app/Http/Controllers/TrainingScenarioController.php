@@ -188,9 +188,11 @@ class TrainingScenarioController extends Controller
             ->where('user_id', $request->user()->id)
             ->firstOrFail();
 
-        $scenarioName = $session->snapshot?->scenario_snapshot_json['name'] ?? 'Latihan';
+        $snapshot = $session->snapshot;
+        $scenarioName = $snapshot?->scenario_snapshot_json['name'] ?? 'Latihan';
+        $maxDurationSeconds = $snapshot?->scenario_snapshot_json['max_duration_seconds'] ?? 900;
 
-        return view('training.prepare', compact('session', 'scenarioName'));
+        return view('training.prepare', compact('session', 'scenarioName', 'maxDurationSeconds'));
     }
 
     private function resolvePersona(ScenarioVersion $version, PersonaMode $mode, ?int $personaId): Persona

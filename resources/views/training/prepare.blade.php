@@ -125,6 +125,7 @@
                         data-output-audio-format="pcm16-24000-le"
                         data-live-debug="false"
                         data-runtime-state="idle"
+                        data-session-duration-seconds="{{ $maxDurationSeconds }}"
                         data-credentials-url="{{ route('training.sessions.live-credentials.store', $session->public_id) }}">
                         <div class="flex flex-col gap-5 sm:flex-row sm:items-start sm:justify-between">
                             <div class="space-y-2">
