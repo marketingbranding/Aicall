@@ -114,6 +114,7 @@
                         data-transcript-events="0"
                         data-transcript-latest-speaker="none"
                         data-transcript-latest-status="none"
+                        data-session-id="{{ $session->public_id }}"
                         data-live-goaway="false"
                         data-live-goaway-reason="none"
                         data-live-goaway-reconnect="none"

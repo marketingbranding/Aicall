@@ -797,6 +797,7 @@ class TrainingBriefingTest extends TestCase
         $response = $this->actingAs($user)->get(route('training.sessions.prepare', $session->public_id));
 
         $response->assertOk();
+        $response->assertSee('data-session-id="' . $session->public_id . '"', false);
         $response->assertSee('data-live-reconnect="none"', false);
         $response->assertSee('data-live-goaway="false"', false);
         $response->assertSee('data-live-goaway-reconnect="none"', false);

@@ -61,6 +61,7 @@ class RoleplayLiveCredentialsController extends Controller
                 RoleplaySessionStatus::REQUESTING_MICROPHONE->value,
                 RoleplaySessionStatus::READY->value,
                 RoleplaySessionStatus::ACTIVE->value,
+                RoleplaySessionStatus::RECONNECTING->value,
             ], true);
     }
 }

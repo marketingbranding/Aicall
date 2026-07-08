@@ -5,6 +5,7 @@ import { MicrophoneCapture } from './microphone-capture';
 class RoleplayRuntime {
     constructor(root) {
         this.root = root;
+        this.sessionId = root.dataset.sessionId || '';
         this.credentialsUrl = root.dataset.credentialsUrl;
         this.statusUrl = this.credentialsUrl.replace('/live-credentials', '/status');
         this._reportedStatus = null;
@@ -54,8 +55,58 @@ class RoleplayRuntime {
         this.reconnectIndicator = root.querySelector('[data-live-reconnect-indicator]');
     }
 
+    _getStorageKey() {
+        return `roleplay_reconnect_${this.sessionId}`;
+    }
+
+    _saveReconnectToken(token) {
+        if (!this.sessionId || !token) return;
+        try {
+            sessionStorage.setItem(this._getStorageKey(), token);
+        } catch (_) {
+        }
+    }
+
+    _loadReconnectToken() {
+        if (!this.sessionId) return null;
+        try {
+            const token = sessionStorage.getItem(this._getStorageKey());
+            if (token) {
+                this.reconnectToken = token;
+            }
+            return token;
+        } catch (_) {
+            return null;
+        }
+    }
+
+    _clearReconnectToken() {
+        if (!this.sessionId) return;
+        try {
+            sessionStorage.removeItem(this._getStorageKey());
+        } catch (_) {
+        }
+        this.reconnectToken = null;
+    }
+
+    _clearStaleReconnectTokens() {
+        if (!this.sessionId) return;
+        try {
+            const prefix = 'roleplay_reconnect_';
+            for (let i = sessionStorage.length - 1; i >= 0; i--) {
+                const key = sessionStorage.key(i);
+                if (key && key.startsWith(prefix) && key !== this._getStorageKey()) {
+                    sessionStorage.removeItem(key);
+                }
+            }
+        } catch (_) {
+        }
+    }
+
     init() {
         this.setState('idle');
+        this._clearStaleReconnectTokens();
+        this._loadReconnectToken();
         this.initTranscriptDebugPanel();
         this.startButton?.addEventListener('click', () => {
             this.ensurePlaybackQueue()?.prime();
@@ -95,6 +146,11 @@ class RoleplayRuntime {
             });
 
             if (!response.ok) {
+                if (response.status === 409 && this.reconnectToken) {
+                    this._clearReconnectToken();
+                    this.setState('credentials_failed', 'Sesi sedang dalam status tersambung ulang. Mulai sesi baru.');
+                    return;
+                }
                 this.handleCredentialError(response.status);
                 return;
             }
@@ -110,9 +166,18 @@ class RoleplayRuntime {
                 return;
             }
 
-            this.setState('credentials_ready');
-            this.connectLive();
+            if (this.reconnectToken) {
+                this.reportStatus('RECONNECTING');
+                this.setState('live_reconnecting');
+                this.reconnectLive();
+            } else {
+                this.setState('credentials_ready');
+                this.connectLive();
+            }
         } catch (_) {
+            if (this.reconnectToken) {
+                this._clearReconnectToken();
+            }
             this.setState('credentials_failed');
         }
     }
@@ -295,6 +360,7 @@ class RoleplayRuntime {
     handleSessionTimeLimit() {
         if (this.sessionTimedOut) return;
         this.sessionTimedOut = true;
+        this._clearReconnectToken();
         this.clearSessionTimer();
         this.reportStatus('ENDING', 'TIME_LIMIT');
 
@@ -351,6 +417,7 @@ class RoleplayRuntime {
         this.root.dataset.liveGoaway = 'true';
         this.root.dataset.liveGoawayReason = context.reason || 'unknown';
         this.root.dataset.liveGoawayReconnect = this.reconnectToken ? 'available' : 'none';
+        this._saveReconnectToken(this.reconnectToken);
 
         this.playbackQueue?.clear();
         this.playbackQueue?.close();
@@ -426,6 +493,7 @@ class RoleplayRuntime {
         this.reconnectAttempts++;
 
         if (this.reconnectAttempts > this.maxReconnectAttempts) {
+            this._clearReconnectToken();
             this.reportStatus('FAILED', 'FAILURE', 'Reconnection failed after max attempts');
             this.setState('live_reconnection_failed', 'Gagal menyambung ulang setelah beberapa kali percobaan.');
             return;
@@ -447,7 +515,7 @@ class RoleplayRuntime {
             reconnectToken: currentReconnectToken,
             onSetupComplete: () => {
                 this.reconnectAttempts = 0;
-                this.reconnectToken = null;
+                this._clearReconnectToken();
                 this.root.dataset.liveGoaway = 'false';
                 this.root.dataset.liveGoawayReason = 'none';
                 this.root.dataset.liveGoawayReconnect = 'none';
@@ -469,6 +537,7 @@ class RoleplayRuntime {
             onGoAway: (context) => this.handleGoAway(context),
             onToolCall: (call) => this.handleToolCall(call),
             onError: () => {
+                this._clearReconnectToken();
                 this.reportStatus('FAILED', 'FAILURE', 'Reconnection connection error');
                 this.setState('live_reconnection_failed');
             },
@@ -477,6 +546,7 @@ class RoleplayRuntime {
     }
 
     stopSessionAudio(state = 'audio_stream_stopped') {
+        this._clearReconnectToken();
         this.stopAudioStreaming(state);
         this.playbackQueue?.close();
         this.playbackQueue = null;
