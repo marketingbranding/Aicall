@@ -656,6 +656,37 @@ class TrainingBriefingTest extends TestCase
         $response->assertSee('Coba Lagi');
     }
 
+    public function test_prepare_page_includes_roleplay_runtime_container_and_credentials_endpoint(): void
+    {
+        $user = User::factory()->sales()->active()->create();
+        $session = RoleplaySession::factory()->forUser($user)->create();
+        RoleplaySessionSnapshot::factory()->create(['roleplay_session_id' => $session->id]);
+
+        $response = $this->actingAs($user)->get(route('training.sessions.prepare', $session->public_id));
+
+        $response->assertOk();
+        $response->assertSee('id="roleplay-runtime"', false);
+        $response->assertSee('data-roleplay-runtime', false);
+        $response->assertSee('data-runtime-state="idle"', false);
+        $response->assertSee('data-roleplay-start', false);
+        $response->assertSee('Mulai Sesi');
+        $response->assertSee(route('training.sessions.live-credentials.store', $session->public_id), false);
+    }
+
+    public function test_prepare_page_does_not_expose_permanent_api_key(): void
+    {
+        config(['gemini.api_key' => 'server-secret-key']);
+        $user = User::factory()->sales()->active()->create();
+        $session = RoleplaySession::factory()->forUser($user)->create();
+        RoleplaySessionSnapshot::factory()->create(['roleplay_session_id' => $session->id]);
+
+        $response = $this->actingAs($user)->get(route('training.sessions.prepare', $session->public_id));
+
+        $response->assertOk();
+        $response->assertDontSee('server-secret-key');
+        $response->assertDontSee('GEMINI_API_KEY');
+    }
+
     private function createAssignedPersona(Scenario $scenario, User $user, string $name = 'Persona Aktif', array $versionData = []): Persona
     {
         $persona = $this->createPersona($user, $name, $versionData);

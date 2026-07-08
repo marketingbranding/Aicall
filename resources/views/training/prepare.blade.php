@@ -13,7 +13,7 @@
                         <p class="text-sm text-sage-700 font-medium">Sesi latihan berhasil dibuat.</p>
                         <h3 class="text-2xl font-semibold text-gray-900 mt-2">{{ $scenarioName }}</h3>
                         <p class="text-sm text-gray-500 mt-2">
-                            Halaman ini akan menjadi layar persiapan sebelum panggilan. Token Gemini Live belum dibuat pada tahap ini.
+                            Halaman ini menyiapkan izin mikrofon dan kredensial sementara sebelum panggilan. Panggilan suara belum dimulai.
                         </p>
                     </div>
 
@@ -67,7 +67,7 @@
 
                             <div data-microphone-state="allowed" class="hidden space-y-2">
                                 <p class="text-sm font-medium text-sage-800">Mikrofon siap</p>
-                                <p class="text-sm text-gray-600">Izin mikrofon sudah diberikan. Langkah koneksi panggilan akan ditambahkan pada tahap berikutnya.</p>
+                                <p class="text-sm text-gray-600">Izin mikrofon sudah diberikan. Anda bisa menyiapkan kredensial sementara untuk sesi Live.</p>
                             </div>
 
                             <div data-microphone-state="denied" class="hidden space-y-2">
@@ -99,6 +99,31 @@
 
                         <p class="mt-4 text-xs text-gray-500">
                             Jika Anda memakai headset, pastikan headset sudah terpasang sebelum memeriksa mikrofon.
+                        </p>
+                    </div>
+
+                    <div id="roleplay-runtime"
+                        class="rounded-2xl border border-stone-200 bg-white p-5 sm:p-6"
+                        data-roleplay-runtime
+                        data-runtime-state="idle"
+                        data-credentials-url="{{ route('training.sessions.live-credentials.store', $session->public_id) }}">
+                        <div class="flex flex-col gap-5 sm:flex-row sm:items-start sm:justify-between">
+                            <div class="space-y-2">
+                                <p class="text-xs font-semibold uppercase tracking-wide text-sage-700">Koneksi Live</p>
+                                <h4 class="text-lg font-semibold text-gray-900" data-runtime-status>Siap memulai</h4>
+                                <p class="text-sm text-gray-600" data-runtime-detail>
+                                    Setelah mikrofon siap, tekan Mulai Sesi untuk menyiapkan koneksi Live.
+                                </p>
+                            </div>
+
+                            <button type="button" data-roleplay-start
+                                class="hidden inline-flex w-full items-center justify-center rounded-md border border-transparent bg-sage-600 px-4 py-2 text-xs font-semibold uppercase tracking-widest text-white transition duration-150 ease-in-out hover:bg-sage-700 focus:bg-sage-700 focus:outline-none focus:ring-2 focus:ring-sage-500 focus:ring-offset-2 active:bg-sage-800 disabled:opacity-60 sm:w-auto">
+                                Mulai Sesi
+                            </button>
+                        </div>
+
+                        <p class="mt-4 text-xs text-gray-500">
+                            Kredensial sementara hanya disimpan di memori browser. Audio belum dikirim dan koneksi Gemini Live belum dibuka pada tahap ini.
                         </p>
                     </div>
 
@@ -157,6 +182,7 @@
                     const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
                     stream.getTracks().forEach((track) => track.stop());
                     showState('allowed');
+                    document.dispatchEvent(new CustomEvent('roleplay:microphone-allowed'));
                 } catch (error) {
                     if (error && (error.name === 'NotAllowedError' || error.name === 'PermissionDeniedError')) {
                         showState('denied');

@@ -322,7 +322,7 @@ Verification note 2026-07-07: Enforced RoleplaySessionSnapshot immutability at t
 - [x] Implement `GeminiLiveRoleplayProvider` server-side provisioning service.
 - [x] Implement ephemeral-token endpoint.
 - [x] Verify short-lived token/config restrictions.
-- [ ] Implement browser `RoleplayRuntime`.
+- [x] Implement browser `RoleplayRuntime`.
 - [ ] Implement `GeminiLiveClient`.
 - [ ] Implement microphone capture.
 - [ ] Implement PCM conversion/resampling according to current API requirements.
@@ -346,6 +346,8 @@ Verification note 2026-07-07: Enforced RoleplaySessionSnapshot immutability at t
 Verification note 2026-07-08: Re-verified official Google Gemini Live docs and model pages. `gemini-3.1-flash-live-preview` remains current for Live roleplay. Updated `config/gemini.php` to disable unsupported Gemini 3.1 affective dialogue and proactive audio while preserving native audio, transcription, realtime text input, synchronous function calling, session resumption, and context compression. Documented ephemeral token defaults/limits, 10-minute connection resets, GoAway/session resumption behavior, 15-minute audio session limit, function-calling limitations, and direct browser-to-Gemini requirements in `docs/07_GEMINI_LIVE.md`.
 
 Verification note 2026-07-08: Implemented backend-only Gemini Live ephemeral token provisioning. Added `POST /training/sessions/{publicId}/live-credentials`, owner/status/snapshot checks, active-account enforcement, configured model usage, server-side permanent API key handling, controlled missing-config/provider errors, and a provider request that binds the short-lived token to the Live model/config with encrypted Actor Instructions sent only server-to-Google. Browser response returns only sanitized bootstrap data and the ephemeral token. Added feature coverage for owner access, non-owner denial, pending/suspended denial, invalid status rejection, secret/instruction non-exposure, and missing API key handling. `php artisan test --filter=RoleplayLiveCredentialsTest` passed 6 tests / 26 assertions.
+
+Verification note 2026-07-08: Implemented prepare-page browser `RoleplayRuntime` foundation only. Added a Vite-loaded runtime module with states `idle`, `requesting_credentials`, `credentials_ready`, and `credentials_failed`; `Mulai Sesi` appears after microphone permission succeeds and requests credentials from `POST /training/sessions/{publicId}/live-credentials`. Ephemeral token is held only in memory and is not logged or written to the DOM/storage. No Gemini Live WebSocket connection, microphone audio streaming, or audio playback was implemented. Added server-rendered tests for runtime DOM hooks, credentials endpoint URL, and no permanent API key/private data in prepare HTML. `php artisan test --filter=TrainingBriefingTest` passed 35 tests / 141 assertions.
 
 - [ ] real Indonesian voice conversation works
 - [ ] user can interrupt AI

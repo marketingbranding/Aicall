@@ -1,4 +1,5 @@
 import './bootstrap';
+import './roleplay-runtime';
 
 import Alpine from 'alpinejs';
 
