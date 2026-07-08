@@ -300,7 +300,7 @@ Verification note 2026-07-07: Created Phase 7 data model and snapshot infrastruc
 - [x] disabled personas not shown in CHOOSE_PERSONA list (tested)
 - [x] unauthorized persona cannot be selected (server-side validation + session creation)
 - [x] same setup creates one application session (idempotency / duplicate-submit prevention)
-- [ ] snapshots are immutable (application-level contract, tested via factory)
+- [x] snapshots are immutable (application-level contract, tested via factory)
 
 Verification note 2026-07-07: Built Training Dashboard with card layout listing active scenarios (name, difficulty, description, max duration, allowed persona modes). Used existing `account.active` middleware + `view-own-training` gate. Added `/training` route (training.dashboard) and "Latihan" nav link. Hidden fields (hidden_context, target_behaviors, sales_briefing, training_objective, success/failure conditions) are never loaded in controller query. All 597 tests pass (1753 assertions), `npm run build` succeeds (56 modules).
 
@@ -311,6 +311,8 @@ Verification note 2026-07-07: Implemented Phase 7.3 server-side persona resoluti
 Verification note 2026-07-07: Implemented duplicate-submit idempotency for roleplay session creation. Briefing forms now include a generated `idempotency_key`. RoleplaySession stores `idempotency_key` and `idempotency_fingerprint`; database uniqueness on `(user_id, idempotency_key)` prevents double-click duplicate sessions. Repeat valid submits with the same user/key/fingerprint redirect to the same preparation page. Reusing a key with a different request is rejected. Covered CHOOSE_PERSONA, RANDOM_PERSONA, HIDDEN_PERSONA, same-session redirect, different-key new session, and pending/suspended blocking. All 624 tests pass (1863 assertions), `npm run build` succeeds (56 modules).
 
 Verification note 2026-07-07: Implemented microphone-permission UI on the preparation page. The page now shows browser-only microphone states: preparing, checking microphone, microphone allowed, permission denied, and unavailable/error. JavaScript uses `navigator.mediaDevices.getUserMedia({ audio: true })` only, stops granted tracks immediately, and does not request Gemini credentials or start Live API. Added retry flow and calm Bahasa Indonesia permission guidance. Preparation page remains owner-only and hides actor instructions, Director state, hidden persona data, and selected hidden persona details. All 630 tests pass (1886 assertions), `npm run build` succeeds (56 modules).
+
+Verification note 2026-07-07: Enforced RoleplaySessionSnapshot immutability at the model level. Snapshots can still be created normally by factories and session creation, but any Eloquent update after creation now throws a LogicException. Added tests proving actor_instructions, actor_instruction_hash, and all JSON snapshot fields cannot be changed after creation while factory creation remains valid. All 635 tests pass (1899 assertions), `npm run build` succeeds (56 modules).
 
 ---
 

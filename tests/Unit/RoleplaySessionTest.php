@@ -18,6 +18,7 @@ use App\Services\Snapshots\SalienceSnapshot;
 use App\Services\Snapshots\ScenarioSnapshot;
 use App\Services\Snapshots\SessionSnapshotService;
 use Illuminate\Foundation\Testing\LazilyRefreshDatabase;
+use LogicException;
 use Tests\TestCase;
 
 class RoleplaySessionTest extends TestCase
@@ -113,6 +114,89 @@ class RoleplaySessionTest extends TestCase
 
         $this->assertIsArray($snapshot->director_snapshot_json);
         $this->assertArrayHasKey('initial_state', $snapshot->director_snapshot_json);
+    }
+
+    public function test_snapshot_can_be_created(): void
+    {
+        $snapshot = RoleplaySessionSnapshot::factory()->create();
+
+        $this->assertNotNull($snapshot->id);
+        $this->assertNotNull($snapshot->roleplay_session_id);
+        $this->assertTrue($snapshot->exists);
+    }
+
+    public function test_updating_snapshot_after_creation_is_blocked(): void
+    {
+        $snapshot = RoleplaySessionSnapshot::factory()->create();
+        $originalScenarioSnapshot = $snapshot->scenario_snapshot_json;
+
+        try {
+            $snapshot->update([
+                'scenario_snapshot_json' => array_merge($originalScenarioSnapshot, ['name' => 'Changed']),
+            ]);
+            $this->fail('Snapshot update should have been rejected.');
+        } catch (LogicException $exception) {
+            $this->assertStringContainsString('immutable', $exception->getMessage());
+        }
+
+        $this->assertSame($originalScenarioSnapshot, $snapshot->fresh()->scenario_snapshot_json);
+    }
+
+    public function test_actor_instructions_cannot_be_changed_after_creation(): void
+    {
+        $snapshot = RoleplaySessionSnapshot::factory()->create([
+            'actor_instructions' => 'Original actor instructions.',
+        ]);
+
+        try {
+            $snapshot->update(['actor_instructions' => 'Changed actor instructions.']);
+            $this->fail('Actor instructions update should have been rejected.');
+        } catch (LogicException) {
+            // Expected.
+        }
+
+        $this->assertSame('Original actor instructions.', $snapshot->fresh()->actor_instructions);
+    }
+
+    public function test_actor_instruction_hash_cannot_be_changed_after_creation(): void
+    {
+        $snapshot = RoleplaySessionSnapshot::factory()->create();
+        $originalHash = $snapshot->actor_instruction_hash;
+
+        try {
+            $snapshot->update(['actor_instruction_hash' => str_repeat('a', 64)]);
+            $this->fail('Actor instruction hash update should have been rejected.');
+        } catch (LogicException) {
+            // Expected.
+        }
+
+        $this->assertSame($originalHash, $snapshot->fresh()->actor_instruction_hash);
+    }
+
+    public function test_json_snapshot_fields_cannot_be_changed_after_creation(): void
+    {
+        $fields = [
+            'persona_snapshot_json',
+            'scenario_snapshot_json',
+            'difficulty_snapshot_json',
+            'salience_snapshot_json',
+            'rubric_snapshot_json',
+            'director_snapshot_json',
+        ];
+
+        foreach ($fields as $field) {
+            $snapshot = RoleplaySessionSnapshot::factory()->create();
+            $original = $snapshot->{$field};
+
+            try {
+                $snapshot->update([$field => array_merge($original, ['changed' => true])]);
+                $this->fail("$field update should have been rejected.");
+            } catch (LogicException) {
+                // Expected.
+            }
+
+            $this->assertSame($original, $snapshot->fresh()->{$field});
+        }
     }
 
     public function test_session_can_transition_through_lifecycle(): void

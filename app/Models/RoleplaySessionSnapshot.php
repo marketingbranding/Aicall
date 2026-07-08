@@ -5,6 +5,7 @@ namespace App\Models;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use LogicException;
 
 class RoleplaySessionSnapshot extends Model
 {
@@ -39,6 +40,13 @@ class RoleplaySessionSnapshot extends Model
             'actor_instructions' => 'encrypted',
             'created_at' => 'datetime',
         ];
+    }
+
+    protected static function booted(): void
+    {
+        static::updating(function (): void {
+            throw new LogicException('Roleplay session snapshots are immutable after creation.');
+        });
     }
 
     public function session(): BelongsTo
