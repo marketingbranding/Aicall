@@ -6,6 +6,7 @@ use App\Enums\RoleplaySessionStatus;
 use App\Models\RoleplaySession;
 use App\Models\RoleplaySessionSnapshot;
 use App\Models\User;
+use App\Services\Director\RoleplayEventType;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Http;
 use Tests\TestCase;
@@ -158,6 +159,52 @@ class RoleplayLiveCredentialsTest extends TestCase
         $this->assertStringNotContainsString('actor_instructions', $body);
         $this->assertStringNotContainsString('hidden_information', $body);
         $this->assertStringNotContainsString('director_snapshot', $body);
+    }
+
+    public function test_live_config_includes_tool_declarations(): void
+    {
+        Http::fake([
+            'generativelanguage.googleapis.com/*' => Http::response(['name' => 'authTokens/test-token'], 200),
+        ]);
+        config(['gemini.api_key' => 'server-secret-key']);
+        $user = User::factory()->sales()->active()->create();
+        $session = $this->createSessionWithSnapshot($user);
+
+        $this->actingAs($user)
+            ->postJson(route('training.sessions.live-credentials.store', $session->public_id))
+            ->assertOk();
+
+        Http::assertSent(function ($request) {
+            $tools = data_get($request->data(), 'authToken.liveConnectConstraints.config.tools');
+            if (!is_array($tools) || count($tools) !== 1) {
+                return false;
+            }
+
+            $declarations = $tools[0]['functionDeclarations'] ?? [];
+            $toolNames = array_column($declarations, 'name');
+
+            if (!in_array('report_roleplay_event', $toolNames, true)) {
+                return false;
+            }
+
+            $reportEvent = $declarations[array_search('report_roleplay_event', $toolNames, true)];
+            $params = $reportEvent['parameters'] ?? [];
+            $properties = $params['properties'] ?? [];
+            $required = $params['required'] ?? [];
+
+            if (!in_array('event_type', $required, true)) {
+                return false;
+            }
+
+            $allowedEvents = $properties['event_type']['enum'] ?? [];
+            $expectedCount = count(RoleplayEventType::cases());
+
+            return count($allowedEvents) === $expectedCount
+                && in_array('GOOD_OPENING', $allowedEvents, true)
+                && in_array('CLEAR_PROFESSIONAL_REDIRECTION', $allowedEvents, true)
+                && in_array('DISTRUST_SIGNAL', $allowedEvents, true)
+                && $properties['severity']['enum'] === ['LOW', 'MODERATE', 'HIGH', 'CRITICAL'];
+        });
     }
 
     public function test_response_includes_first_speaker_default(): void

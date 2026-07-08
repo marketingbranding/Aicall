@@ -419,8 +419,8 @@ Verification note 2026-07-08 (finalize): Created RoleplayTranscriptFinalizeContr
 
 ## Phase 10 — Sparse Director Semantic Tool Integration (Backend)
 
-- [ ] Define strict `report_roleplay_event` Live tool schema (frontend).
-- [ ] Add semantic-tool rules to Actor Instructions (frontend).
+- [x] Define strict `report_roleplay_event` Live tool schema (frontend).
+- [x] Add semantic-tool rules to Actor Instructions (frontend).
 - [x] Implement browser tool-call bridge (frontend).
 - [x] Implement authenticated Director event endpoint.
 - [x] Validate event enums/schema.

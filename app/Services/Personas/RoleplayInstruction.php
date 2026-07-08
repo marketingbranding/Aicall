@@ -15,6 +15,7 @@ readonly class RoleplayInstruction
         public string $currentScenario,
         public string $conversationalRules,
         public string $directorRules,
+        public string $semanticToolRules,
         public string $guardrails,
     ) {}
 
@@ -31,6 +32,7 @@ readonly class RoleplayInstruction
             "=== SKENARIO SAAT INI ===\n" . $this->currentScenario,
             "=== ATURAN PERCAKAPAN ===\n" . $this->conversationalRules,
             "=== ATURAN DIRECTOR NOTES ===\n" . $this->directorRules,
+            "=== ATURAN TOOL SEMANTIK ===\n" . $this->semanticToolRules,
             "=== PENGAMAN ===\n" . $this->guardrails,
         ]));
     }

@@ -283,6 +283,31 @@ class RoleplayInstructionCompilerTest extends TestCase
         $this->assertStringContainsString('Jangan pernah menyebutkan "Director Notes"', $text);
     }
 
+    // ─── semantic tool rules ───
+
+    public function test_includes_semantic_tool_rules(): void
+    {
+        $instruction = $this->compile();
+
+        $text = $instruction->toText();
+
+        $this->assertStringContainsString('=== ATURAN TOOL SEMANTIK ===', $text);
+        $this->assertStringContainsString('report_roleplay_event', $text);
+        $this->assertStringContainsString('Jangan panggil report_roleplay_event setiap giliran bicara', $text);
+        $this->assertStringContainsString('Jangan pernah mengungkapkan kepada salesperson bahwa Anda menggunakan tool', $text);
+        $this->assertStringContainsString('Jangan menggunakan jenis peristiwa', $text);
+    }
+
+    public function test_semantic_tool_rules_do_not_expose_enum_values(): void
+    {
+        $instruction = $this->compile();
+
+        $text = $instruction->toText();
+
+        $this->assertStringNotContainsString('GOOD_OPENING', $text);
+        $this->assertStringNotContainsString('MODERATE', $text);
+    }
+
     // ─── knowledge and misconceptions ───
 
     public function test_includes_knowledge_and_misconceptions(): void

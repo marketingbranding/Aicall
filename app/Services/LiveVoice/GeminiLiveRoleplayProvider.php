@@ -4,6 +4,7 @@ namespace App\Services\LiveVoice;
 
 use App\Domain\LiveVoice\LiveModelCapabilityRegistry;
 use App\Models\RoleplaySession;
+use App\Services\Director\RoleplayEventType;
 use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\Http;
 
@@ -90,7 +91,63 @@ class GeminiLiveRoleplayProvider
             $config['sessionResumption'] = new \stdClass();
         }
 
+        if ($modelCapabilities->supports('supports_function_calling')) {
+            $config['tools'] = $this->buildToolDeclarations();
+        }
+
         return $config;
+    }
+
+    private function buildToolDeclarations(): array
+    {
+        $eventTypes = array_map(fn(RoleplayEventType $case) => $case->value, RoleplayEventType::cases());
+
+        return [
+            [
+                'functionDeclarations' => [
+                    [
+                        'name' => 'report_roleplay_event',
+                        'description' => 'Laporkan peristiwa semantik yang diamati dalam percakapan. Panggil hanya untuk momen yang berarti secara perilaku, bukan setiap giliran bicara.',
+                        'parameters' => [
+                            'type' => 'object',
+                            'properties' => [
+                                'event_type' => [
+                                    'type' => 'string',
+                                    'enum' => $eventTypes,
+                                    'description' => 'Jenis peristiwa semantik yang diamati.',
+                                ],
+                                'severity' => [
+                                    'type' => 'string',
+                                    'enum' => ['LOW', 'MODERATE', 'HIGH', 'CRITICAL'],
+                                    'description' => 'Tingkat keparahan peristiwa.',
+                                ],
+                                'topic' => [
+                                    'type' => 'string',
+                                    'description' => 'Topik terkait peristiwa (opsional).',
+                                ],
+                                'related_objection_key' => [
+                                    'type' => 'string',
+                                    'description' => 'Kunci keberatan terkait jika peristiwa berhubungan dengan keberatan tertentu (opsional).',
+                                ],
+                                'hidden_information_key' => [
+                                    'type' => 'string',
+                                    'description' => 'Kunci informasi tersembunyi terkait jika peristiwa berhubungan dengan pengungkapan (opsional).',
+                                ],
+                                'short_internal_reason' => [
+                                    'type' => 'string',
+                                    'description' => 'Alasan internal singkat mengapa peristiwa ini dilaporkan (opsional).',
+                                ],
+                                'source_turn_sequence' => [
+                                    'type' => 'integer',
+                                    'description' => 'Nomor urut giliran bicara sumber peristiwa (opsional).',
+                                ],
+                            ],
+                            'required' => ['event_type'],
+                        ],
+                    ],
+                ],
+            ],
+        ];
     }
 
     private function clientConfig($modelCapabilities): array
