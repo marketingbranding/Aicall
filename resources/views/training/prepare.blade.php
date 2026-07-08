@@ -107,6 +107,7 @@
                         data-roleplay-runtime
                         data-gemini-live-client="pending"
                         data-microphone-capture="pending"
+                        data-audio-stream="pending"
                         data-input-audio-format="pcm16-16000-le"
                         data-live-debug="false"
                         data-runtime-state="idle"
@@ -124,10 +125,15 @@
                                 class="hidden inline-flex w-full items-center justify-center rounded-md border border-transparent bg-sage-600 px-4 py-2 text-xs font-semibold uppercase tracking-widest text-white transition duration-150 ease-in-out hover:bg-sage-700 focus:bg-sage-700 focus:outline-none focus:ring-2 focus:ring-sage-500 focus:ring-offset-2 active:bg-sage-800 disabled:opacity-60 sm:w-auto">
                                 Mulai Sesi
                             </button>
+
+                            <button type="button" data-roleplay-stop
+                                class="hidden inline-flex w-full items-center justify-center rounded-md border border-gray-300 bg-white px-4 py-2 text-xs font-semibold uppercase tracking-widest text-gray-700 shadow-sm transition duration-150 ease-in-out hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-sage-500 focus:ring-offset-2 sm:w-auto">
+                                Hentikan Audio
+                            </button>
                         </div>
 
                         <p class="mt-4 text-xs text-gray-500">
-                            Kredensial sementara hanya disimpan di memori browser. Mikrofon disiapkan sebagai PCM 16 kHz, tetapi audio belum dikirim dan belum ada audio Gemini yang diputar pada tahap ini.
+                            Kredensial sementara hanya disimpan di memori browser. Mikrofon dikirim sebagai PCM 16 kHz setelah sesi Live tersambung. Audio Gemini belum diputar pada tahap ini.
                         </p>
                     </div>
 

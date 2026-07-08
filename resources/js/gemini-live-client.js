@@ -1,3 +1,5 @@
+import { encodeBase64 } from './audio-pcm-utils';
+
 class GeminiLiveClient {
     constructor({ token, model, liveConfig = {}, debug = false, WebSocketClass = window.WebSocket }) {
         this.token = token;
@@ -6,6 +8,7 @@ class GeminiLiveClient {
         this.debug = debug;
         this.WebSocketClass = WebSocketClass;
         this.socket = null;
+        this.setupComplete = false;
     }
 
     connect({ onOpen, onSetupComplete, onError, onClose } = {}) {
@@ -25,6 +28,7 @@ class GeminiLiveClient {
             const message = this.parseMessage(event.data);
 
             if (message?.setupComplete) {
+                this.setupComplete = true;
                 onSetupComplete?.();
             }
 
@@ -38,6 +42,8 @@ class GeminiLiveClient {
         });
 
         this.socket.addEventListener('close', (event) => {
+            this.setupComplete = false;
+
             onClose?.({
                 code: event.code,
                 reason: event.reason,
@@ -49,6 +55,11 @@ class GeminiLiveClient {
     close() {
         this.socket?.close();
         this.socket = null;
+        this.setupComplete = false;
+    }
+
+    isReady() {
+        return this.setupComplete && this.socket?.readyState === 1;
     }
 
     websocketUrl() {
@@ -68,6 +79,27 @@ class GeminiLiveClient {
                 },
             },
         }));
+    }
+
+    sendAudioChunk(chunk) {
+        if (!this.isReady() || !chunk?.audio || !chunk?.mimeType) {
+            return false;
+        }
+
+        try {
+            this.socket.send(JSON.stringify({
+                realtimeInput: {
+                    mediaChunks: [{
+                        mimeType: chunk.mimeType,
+                        data: encodeBase64(chunk.audio),
+                    }],
+                },
+            }));
+        } catch (_) {
+            return false;
+        }
+
+        return true;
     }
 
     parseMessage(data) {

@@ -671,6 +671,7 @@ class TrainingBriefingTest extends TestCase
         $response->assertSee('data-live-debug="false"', false);
         $response->assertSee('data-runtime-state="idle"', false);
         $response->assertSee('data-roleplay-start', false);
+        $response->assertSee('data-roleplay-stop', false);
         $response->assertSee('Mulai Sesi');
         $response->assertSee(route('training.sessions.live-credentials.store', $session->public_id), false);
     }
@@ -687,6 +688,20 @@ class TrainingBriefingTest extends TestCase
         $response->assertSee('data-microphone-capture="pending"', false);
         $response->assertSee('data-input-audio-format="pcm16-16000-le"', false);
         $response->assertSee('PCM 16 kHz');
+    }
+
+    public function test_prepare_page_includes_audio_streaming_hooks(): void
+    {
+        $user = User::factory()->sales()->active()->create();
+        $session = RoleplaySession::factory()->forUser($user)->create();
+        RoleplaySessionSnapshot::factory()->create(['roleplay_session_id' => $session->id]);
+
+        $response = $this->actingAs($user)->get(route('training.sessions.prepare', $session->public_id));
+
+        $response->assertOk();
+        $response->assertSee('data-audio-stream="pending"', false);
+        $response->assertSee('data-roleplay-stop', false);
+        $response->assertSee('Hentikan Audio');
     }
 
     public function test_prepare_page_does_not_write_ephemeral_token_to_dom(): void

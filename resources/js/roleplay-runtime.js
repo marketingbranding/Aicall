@@ -10,23 +10,26 @@ class RoleplayRuntime {
         this.credentials = null;
         this.liveClient = null;
         this.microphoneCapture = null;
+        this.audioStreaming = false;
         this.liveDebug = root.dataset.liveDebug === 'true';
 
         this.status = root.querySelector('[data-runtime-status]');
         this.detail = root.querySelector('[data-runtime-detail]');
         this.startButton = root.querySelector('[data-roleplay-start]');
+        this.stopButton = root.querySelector('[data-roleplay-stop]');
     }
 
     init() {
         this.setState('idle');
         this.startButton?.addEventListener('click', () => this.requestCredentials());
+        this.stopButton?.addEventListener('click', () => this.stopAudioStreaming('audio_stream_stopped'));
 
         document.addEventListener('roleplay:microphone-allowed', () => {
             this.startButton?.classList.remove('hidden');
         });
 
-        window.addEventListener('beforeunload', () => this.stopMicrophoneCapture());
-        window.addEventListener('pagehide', () => this.stopMicrophoneCapture());
+        window.addEventListener('beforeunload', () => this.stopAudioStreaming('audio_stream_stopped'));
+        window.addEventListener('pagehide', () => this.stopAudioStreaming('audio_stream_stopped'));
     }
 
     async requestCredentials() {
@@ -86,11 +89,11 @@ class RoleplayRuntime {
                 this.startMicrophoneCapture();
             },
             onError: () => {
-                this.stopMicrophoneCapture();
+                this.stopAudioStreaming('audio_stream_failed');
                 this.setState('live_connection_failed');
             },
             onClose: (event) => {
-                this.stopMicrophoneCapture();
+                this.stopAudioStreaming('audio_stream_stopped');
 
                 if (this.state === 'live_connection_failed') return;
 
@@ -107,18 +110,35 @@ class RoleplayRuntime {
 
         this.microphoneCapture = new MicrophoneCapture({
             targetSampleRate: 16000,
-            onAudioChunk: () => {
-                // Streaming to Gemini is intentionally implemented in the next Phase 8 task.
+            onAudioChunk: (chunk) => {
+                if (!this.audioStreaming) return;
+
+                if (!this.liveClient?.sendAudioChunk(chunk)) {
+                    this.stopAudioStreaming('audio_stream_failed');
+                }
             },
         });
 
         try {
             await this.microphoneCapture.start();
-            this.setState('microphone_capturing');
+            this.audioStreaming = true;
+            this.setState('audio_streaming');
         } catch (_) {
             this.microphoneCapture?.stop();
             this.microphoneCapture = null;
+            this.audioStreaming = false;
             this.setState('microphone_capture_failed');
+        }
+    }
+
+    stopAudioStreaming(state = 'audio_stream_stopped') {
+        const wasStreaming = this.audioStreaming || Boolean(this.microphoneCapture);
+
+        this.audioStreaming = false;
+        this.stopMicrophoneCapture();
+
+        if (wasStreaming) {
+            this.setState(state);
         }
     }
 
@@ -157,6 +177,12 @@ class RoleplayRuntime {
             this.root.dataset.microphoneCapture = 'failed';
         } else if (state === 'microphone_stopped') {
             this.root.dataset.microphoneCapture = 'stopped';
+        } else if (state === 'audio_streaming') {
+            this.root.dataset.audioStream = 'streaming';
+        } else if (state === 'audio_stream_failed') {
+            this.root.dataset.audioStream = 'failed';
+        } else if (state === 'audio_stream_stopped') {
+            this.root.dataset.audioStream = 'stopped';
         }
 
         const messages = {
@@ -171,6 +197,9 @@ class RoleplayRuntime {
             microphone_capturing: ['Mikrofon aktif', 'Audio mikrofon sedang disiapkan sebagai PCM 16 kHz di browser. Audio belum dikirim ke Gemini.'],
             microphone_capture_failed: ['Mikrofon belum aktif', 'Mikrofon belum bisa mulai merekam. Periksa izin browser dan perangkat mikrofon.'],
             microphone_stopped: ['Mikrofon berhenti', 'Capture mikrofon sudah dihentikan dan track browser sudah ditutup.'],
+            audio_streaming: ['Latihan suara aktif', 'Audio mikrofon PCM 16 kHz sedang dikirim ke Gemini Live. Audio balasan belum diputar pada tahap ini.'],
+            audio_stream_failed: ['Streaming audio terhenti', 'Audio mikrofon belum bisa dikirim. Periksa koneksi lalu mulai ulang persiapan sesi.'],
+            audio_stream_stopped: ['Streaming audio berhenti', 'Pengiriman audio mikrofon sudah dihentikan dan track browser sudah ditutup.'],
         };
 
         const [status, detail] = messages[state] || messages.idle;
@@ -184,9 +213,12 @@ class RoleplayRuntime {
                 'connecting_live',
                 'live_connected',
                 'microphone_capturing',
+                'audio_streaming',
             ].includes(state);
             this.startButton.textContent = state === 'requesting_credentials' ? 'Menyiapkan...' : 'Mulai Sesi';
         }
+
+        this.stopButton?.classList.toggle('hidden', state !== 'audio_streaming');
     }
 }
 
