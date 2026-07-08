@@ -109,6 +109,7 @@
                         data-microphone-capture="pending"
                         data-audio-stream="pending"
                         data-ai-playback="pending"
+                        data-barge-in="idle"
                         data-conversation-state="idle"
                         data-input-audio-format="pcm16-16000-le"
                         data-output-audio-format="pcm16-24000-le"
@@ -136,7 +137,7 @@
                         </div>
 
                         <p class="mt-4 text-xs text-gray-500">
-                            Kredensial sementara hanya disimpan di memori browser. Mikrofon dikirim sebagai PCM 16 kHz setelah sesi Live tersambung. Audio Gemini diputar sebagai PCM 24 kHz tanpa menyimpan transkrip.
+                            Kredensial sementara hanya disimpan di memori browser. Mikrofon dikirim sebagai PCM 16 kHz setelah sesi Live tersambung. Audio Gemini diputar sebagai PCM 24 kHz dan dihentikan saat Anda menyela, tanpa menyimpan transkrip.
                         </p>
 
                         <div class="mt-5 rounded-xl border border-stone-100 bg-stone-50 p-4" data-conversation-state-panel>

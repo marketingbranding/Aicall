@@ -16,6 +16,7 @@ class RoleplayRuntime {
         this.conversationState = 'idle';
         this.userSpeechTimer = null;
         this.waitingForAiTimer = null;
+        this.interruptionResetTimer = null;
         this.liveDebug = root.dataset.liveDebug === 'true';
 
         this.status = root.querySelector('[data-runtime-status]');
@@ -100,7 +101,7 @@ class RoleplayRuntime {
                 this.startMicrophoneCapture();
             },
             onAudioChunk: (chunk) => this.enqueueAiAudio(chunk),
-            onInterrupted: () => this.clearAiPlayback(),
+            onInterrupted: () => this.clearAiPlayback('model_interruption'),
             onError: () => {
                 this.stopSessionAudio('audio_stream_failed');
                 this.setState('live_connection_failed');
@@ -146,11 +147,15 @@ class RoleplayRuntime {
         this.ensurePlaybackQueue()?.enqueue(chunk);
     }
 
-    clearAiPlayback() {
+    clearAiPlayback(source = 'model_interruption') {
         this.playbackQueue?.clear();
+        this.root.dataset.bargeIn = source;
+        this.clearConversationTimers();
         this.setConversationState('interrupted');
 
-        window.setTimeout(() => {
+        this.interruptionResetTimer = window.setTimeout(() => {
+            this.root.dataset.bargeIn = 'idle';
+
             if (this.conversationState === 'interrupted' && this.audioStreaming) {
                 this.setConversationState('listening');
             }
@@ -162,6 +167,7 @@ class RoleplayRuntime {
         this.playbackQueue?.close();
         this.playbackQueue = null;
         this.clearConversationTimers();
+        this.root.dataset.bargeIn = 'idle';
         this.setConversationState('idle');
     }
 
@@ -206,10 +212,16 @@ class RoleplayRuntime {
         }
 
         this.clearConversationTimers();
+        this.root.dataset.bargeIn = 'idle';
         this.setConversationState('idle');
     }
 
     handleMicrophoneActivity(level) {
+        if (level >= 0.015 && (this.state === 'ai_speaking' || this.conversationState === 'ai_speaking')) {
+            this.clearAiPlayback('user_barge_in');
+            return;
+        }
+
         if (this.state === 'ai_speaking' || this.conversationState === 'interrupted') return;
 
         if (level >= 0.015) {
@@ -239,8 +251,10 @@ class RoleplayRuntime {
     clearConversationTimers() {
         window.clearTimeout(this.userSpeechTimer);
         window.clearTimeout(this.waitingForAiTimer);
+        window.clearTimeout(this.interruptionResetTimer);
         this.userSpeechTimer = null;
         this.waitingForAiTimer = null;
+        this.interruptionResetTimer = null;
     }
 
     stopMicrophoneCapture() {

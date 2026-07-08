@@ -329,8 +329,8 @@ Verification note 2026-07-07: Enforced RoleplaySessionSnapshot immutability at t
 - [x] Implement streaming microphone audio.
 - [x] Implement AI PCM playback queue.
 - [x] Implement speaking/listening state events.
-- [ ] Implement barge-in/interruption handling.
-- [ ] Clear stale playback on model interruption.
+- [x] Implement barge-in/interruption handling.
+- [x] Clear stale playback on model interruption.
 - [ ] Implement input transcription parsing.
 - [ ] Implement output transcription parsing.
 - [ ] Process all Live event content parts correctly.
@@ -360,6 +360,8 @@ Verification note 2026-07-08: Implemented browser microphone audio streaming to 
 Verification note 2026-07-08: Implemented browser AI PCM playback queue. Added `AiPcmPlaybackQueue` to decode Gemini output `audio/pcm` chunks as PCM16 little-endian at 24 kHz, enqueue chunks in order, schedule playback through Web Audio API, and clear current/queued playback on interruption events. `GeminiLiveClient` now extracts audio parts from Live server content and surfaces interruption signals without logging raw audio. Runtime handles `ai_speaking`, `playback_error`, and `playback_idle`, primes playback from the user start gesture, and cleans playback on Live close/failure, user stop, `pagehide`, and `beforeunload`. No transcript persistence, Director Notes, or evaluation were implemented. Added prepare-page render coverage for playback hooks and 24 kHz output format. `php artisan test` passed 647 tests / 1957 assertions; `npm run build` passed.
 
 Verification note 2026-07-08: Implemented browser-only speaking/listening state events. Runtime now tracks `idle`, `listening`, `user_speaking`, `waiting_for_ai`, `thinking`, `ai_speaking`, and `interrupted` through microphone RMS activity, outbound audio chunk activity, Gemini audio chunk arrival, AI playback queue callbacks, and Live interruption signals. Added calm Bahasa Indonesia conversation-state copy and accessible visual chips on the prepare/live runtime panel. No transcript persistence, Director Notes, or evaluation were implemented. Added prepare-page render coverage for speaking/listening hooks while existing private-data exposure tests remain in place. `php artisan test` passed 648 tests / 1967 assertions; `npm run build` passed.
+
+Verification note 2026-07-08: Implemented browser barge-in/interruption handling. Runtime now clears current and queued AI PCM playback when Gemini reports model interruption or when local microphone RMS crosses the speech threshold while AI playback is active. The microphone stream stays live, conversation state moves through `interrupted`, and a transient `data-barge-in` hook distinguishes `user_barge_in` from `model_interruption` without exposing audio, token, transcript, or private prompt data. Added prepare-page render coverage for interruption hooks and copy. `php artisan test` passed 649 tests / 1971 assertions; `npm run build` passed.
 
 - [ ] real Indonesian voice conversation works
 - [ ] user can interrupt AI

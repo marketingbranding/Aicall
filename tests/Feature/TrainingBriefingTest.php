@@ -738,6 +738,20 @@ class TrainingBriefingTest extends TestCase
         $response->assertSee('data-conversation-indicator="interrupted"', false);
     }
 
+    public function test_prepare_page_includes_barge_in_interruption_hooks(): void
+    {
+        $user = User::factory()->sales()->active()->create();
+        $session = RoleplaySession::factory()->forUser($user)->create();
+        RoleplaySessionSnapshot::factory()->create(['roleplay_session_id' => $session->id]);
+
+        $response = $this->actingAs($user)->get(route('training.sessions.prepare', $session->public_id));
+
+        $response->assertOk();
+        $response->assertSee('data-barge-in="idle"', false);
+        $response->assertSee('Terinterupsi');
+        $response->assertSee('dihentikan saat Anda menyela');
+    }
+
     public function test_prepare_page_does_not_write_ephemeral_token_to_dom(): void
     {
         $user = User::factory()->sales()->active()->create();
