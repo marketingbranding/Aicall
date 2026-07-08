@@ -752,6 +752,25 @@ class TrainingBriefingTest extends TestCase
         $response->assertSee('dihentikan saat Anda menyela');
     }
 
+    public function test_prepare_page_includes_hidden_transcript_debug_hooks(): void
+    {
+        $user = User::factory()->sales()->active()->create();
+        $session = RoleplaySession::factory()->forUser($user)->create();
+        RoleplaySessionSnapshot::factory()->create(['roleplay_session_id' => $session->id]);
+
+        $response = $this->actingAs($user)->get(route('training.sessions.prepare', $session->public_id));
+
+        $response->assertOk();
+        $response->assertSee('data-live-transcript="debug-hidden"', false);
+        $response->assertSee('data-transcript-events="0"', false);
+        $response->assertSee('data-transcript-latest-speaker="none"', false);
+        $response->assertSee('data-transcript-latest-status="none"', false);
+        $response->assertSee('data-live-transcript-panel', false);
+        $response->assertSee('aria-hidden="true"', false);
+        $response->assertSee('data-live-transcript-list', false);
+        $response->assertSee('Transkrip tidak dikirim ke server pada tahap ini.');
+    }
+
     public function test_prepare_page_does_not_write_ephemeral_token_to_dom(): void
     {
         $user = User::factory()->sales()->active()->create();

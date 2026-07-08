@@ -110,6 +110,10 @@
                         data-audio-stream="pending"
                         data-ai-playback="pending"
                         data-barge-in="idle"
+                        data-live-transcript="debug-hidden"
+                        data-transcript-events="0"
+                        data-transcript-latest-speaker="none"
+                        data-transcript-latest-status="none"
                         data-conversation-state="idle"
                         data-input-audio-format="pcm16-16000-le"
                         data-output-audio-format="pcm16-24000-le"
@@ -157,6 +161,12 @@
                                     <span class="rounded-full bg-stone-100 px-3 py-1 text-gray-600" data-conversation-indicator="interrupted">Terinterupsi</span>
                                 </div>
                             </div>
+                        </div>
+
+                        <div class="hidden mt-5 rounded-xl border border-stone-100 bg-stone-50 p-4" data-live-transcript-panel aria-hidden="true">
+                            <p class="text-xs font-semibold uppercase tracking-wide text-sage-700">Debug Transkrip Live</p>
+                            <p class="mt-1 text-xs text-gray-600">Panel ini hanya aktif saat debug Live dinyalakan. Transkrip tidak dikirim ke server pada tahap ini.</p>
+                            <ol class="mt-3 space-y-2 text-xs text-gray-700" data-live-transcript-list></ol>
                         </div>
                     </div>
 

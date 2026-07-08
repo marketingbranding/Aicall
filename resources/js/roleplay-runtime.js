@@ -14,6 +14,7 @@ class RoleplayRuntime {
         this.playbackQueue = null;
         this.audioStreaming = false;
         this.conversationState = 'idle';
+        this.transcriptEvents = [];
         this.userSpeechTimer = null;
         this.waitingForAiTimer = null;
         this.interruptionResetTimer = null;
@@ -24,12 +25,15 @@ class RoleplayRuntime {
         this.conversationStatus = root.querySelector('[data-conversation-status]');
         this.conversationDetail = root.querySelector('[data-conversation-detail]');
         this.conversationIndicators = root.querySelectorAll('[data-conversation-indicator]');
+        this.transcriptPanel = root.querySelector('[data-live-transcript-panel]');
+        this.transcriptList = root.querySelector('[data-live-transcript-list]');
         this.startButton = root.querySelector('[data-roleplay-start]');
         this.stopButton = root.querySelector('[data-roleplay-stop]');
     }
 
     init() {
         this.setState('idle');
+        this.initTranscriptDebugPanel();
         this.startButton?.addEventListener('click', () => {
             this.ensurePlaybackQueue()?.prime();
             this.requestCredentials();
@@ -101,6 +105,7 @@ class RoleplayRuntime {
                 this.startMicrophoneCapture();
             },
             onAudioChunk: (chunk) => this.enqueueAiAudio(chunk),
+            onTranscriptEvent: (event) => this.handleTranscriptEvent(event),
             onInterrupted: () => this.clearAiPlayback('model_interruption'),
             onError: () => {
                 this.stopSessionAudio('audio_stream_failed');
@@ -160,6 +165,45 @@ class RoleplayRuntime {
                 this.setConversationState('listening');
             }
         }, 900);
+    }
+
+    handleTranscriptEvent(event) {
+        if (!event?.speaker || !event?.text) return;
+
+        const normalized = {
+            speaker: event.speaker === 'AI' ? 'AI' : 'USER',
+            text: String(event.text),
+            status: event.status === 'final' ? 'final' : 'partial',
+            timestamp: event.timestamp || new Date().toISOString(),
+        };
+
+        this.transcriptEvents.push(normalized);
+        this.root.dataset.transcriptEvents = String(this.transcriptEvents.length);
+        this.root.dataset.transcriptLatestSpeaker = normalized.speaker;
+        this.root.dataset.transcriptLatestStatus = normalized.status;
+
+        if (this.liveDebug) {
+            this.renderTranscriptDebugEvent(normalized);
+        }
+    }
+
+    initTranscriptDebugPanel() {
+        this.root.dataset.transcriptEvents = this.root.dataset.transcriptEvents || '0';
+        this.root.dataset.transcriptLatestSpeaker = this.root.dataset.transcriptLatestSpeaker || 'none';
+        this.root.dataset.transcriptLatestStatus = this.root.dataset.transcriptLatestStatus || 'none';
+
+        if (!this.liveDebug || !this.transcriptPanel) return;
+
+        this.transcriptPanel.classList.remove('hidden');
+        this.transcriptPanel.setAttribute('aria-hidden', 'false');
+    }
+
+    renderTranscriptDebugEvent(event) {
+        if (!this.transcriptList) return;
+
+        const item = document.createElement('li');
+        item.textContent = `[${event.timestamp}] ${event.speaker} ${event.status}: ${event.text}`;
+        this.transcriptList.appendChild(item);
     }
 
     stopSessionAudio(state = 'audio_stream_stopped') {

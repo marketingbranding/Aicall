@@ -11,7 +11,7 @@ class GeminiLiveClient {
         this.setupComplete = false;
     }
 
-    connect({ onOpen, onSetupComplete, onAudioChunk, onInterrupted, onError, onClose } = {}) {
+    connect({ onOpen, onSetupComplete, onAudioChunk, onTranscriptEvent, onInterrupted, onError, onClose } = {}) {
         if (!this.token || !this.model || !this.WebSocketClass) {
             onError?.({ kind: 'configuration' });
             return;
@@ -33,6 +33,7 @@ class GeminiLiveClient {
             }
 
             this.extractAudioChunks(message).forEach((chunk) => onAudioChunk?.(chunk));
+            this.extractTranscriptEvents(message).forEach((transcriptEvent) => onTranscriptEvent?.(transcriptEvent));
 
             if (this.isInterrupted(message)) {
                 onInterrupted?.();
@@ -130,6 +131,57 @@ class GeminiLiveClient {
                 data: inlineData.data,
                 mimeType: inlineData.mimeType || inlineData.mime_type,
             }));
+    }
+
+    extractTranscriptEvents(message) {
+        const timestamp = new Date().toISOString();
+        const serverContent = message?.serverContent || message?.server_content || {};
+        const candidates = [
+            { speaker: 'USER', payload: serverContent.inputTranscription || serverContent.input_transcription },
+            { speaker: 'AI', payload: serverContent.outputTranscription || serverContent.output_transcription },
+            { speaker: 'USER', payload: message?.inputTranscription || message?.input_transcription },
+            { speaker: 'AI', payload: message?.outputTranscription || message?.output_transcription },
+        ];
+
+        return candidates.flatMap(({ speaker, payload }) => this.normalizeTranscriptPayload(payload, speaker, timestamp));
+    }
+
+    normalizeTranscriptPayload(payload, speaker, timestamp) {
+        const items = Array.isArray(payload) ? payload : [payload];
+
+        return items
+            .map((item) => {
+                if (!item) return null;
+
+                const text = typeof item === 'string'
+                    ? item
+                    : String(item.text || item.transcript || item.content || '').trim();
+
+                if (!text) return null;
+
+                return {
+                    speaker,
+                    text,
+                    status: this.transcriptStatus(item),
+                    timestamp,
+                };
+            })
+            .filter(Boolean);
+    }
+
+    transcriptStatus(item) {
+        if (typeof item !== 'object' || item === null) return 'partial';
+
+        const finalValue = item.final ?? item.isFinal ?? item.is_final ?? item.finished ?? item.complete;
+
+        if (finalValue === true) return 'final';
+        if (finalValue === false) return 'partial';
+
+        const explicit = String(item.status || item.type || '').toLowerCase();
+
+        if (explicit.includes('final') || explicit.includes('complete')) return 'final';
+
+        return 'partial';
     }
 
     isInterrupted(message) {
