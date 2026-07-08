@@ -44,7 +44,7 @@ class RoleplaySessionSnapshotFactory extends Factory
                 'training_objective' => null,
                 'hidden_context' => null,
                 'starting_phase' => 'OPENING',
-                'first_speaker' => 'SALES',
+                'first_speaker' => 'USER',
                 'ai_opening_context' => null,
                 'initial_customer_intent' => null,
                 'target_behaviors' => [],

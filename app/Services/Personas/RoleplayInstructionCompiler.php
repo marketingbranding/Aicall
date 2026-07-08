@@ -356,7 +356,7 @@ class RoleplayInstructionCompiler
     {
         $lines = [];
 
-        $firstSpeaker = $scenarioVersion->first_speaker ?? 'SALES';
+        $firstSpeaker = $scenarioVersion->first_speaker ?? 'USER';
         if ($firstSpeaker === 'AI') {
             $lines[] = 'Anda yang memulai percakapan.';
             $openingContext = $scenarioVersion->ai_opening_context ?? '';

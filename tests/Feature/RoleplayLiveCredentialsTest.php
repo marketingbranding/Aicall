@@ -128,7 +128,7 @@ class RoleplayLiveCredentialsTest extends TestCase
             ->postJson(route('training.sessions.live-credentials.store', $session->public_id));
 
         $response->assertOk()
-            ->assertJsonPath('first_speaker', 'SALES');
+            ->assertJsonPath('first_speaker', 'USER');
     }
 
     public function test_response_includes_first_speaker_when_ai(): void

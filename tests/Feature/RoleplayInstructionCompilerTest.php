@@ -50,7 +50,7 @@ class RoleplayInstructionCompilerTest extends TestCase
         $scenarioVersion = ScenarioVersion::create(array_merge([
             'scenario_id' => $scenario->id,
             'version_number' => 1,
-            'first_speaker' => 'SALES',
+            'first_speaker' => 'USER',
             'difficulty_level' => 'NORMAL',
             'max_duration_seconds' => 900,
             'allow_ai_end_call' => true,
@@ -215,11 +215,11 @@ class RoleplayInstructionCompilerTest extends TestCase
         $this->assertStringContainsString('Anda sedang melihat iklan rumah di media sosial', $text);
     }
 
-    public function test_includes_first_speaker_instruction_when_sales(): void
+    public function test_includes_first_speaker_instruction_when_user(): void
     {
         $instruction = $this->compile(
             [],
-            ['first_speaker' => 'SALES']
+            ['first_speaker' => 'USER']
         );
 
         $text = $instruction->toText();

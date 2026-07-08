@@ -134,7 +134,7 @@ class SessionSnapshotService
             trainingObjective: $version->training_objective ?? null,
             hiddenContext: $version->hidden_context ?? null,
             startingPhase: $version->starting_phase ?? 'OPENING',
-            firstSpeaker: $version->first_speaker ?? 'SALES',
+            firstSpeaker: $version->first_speaker ?? 'USER',
             aiOpeningContext: $version->ai_opening_context ?? null,
             initialCustomerIntent: $version->initial_customer_intent ?? null,
             targetBehaviors: $version->target_behaviors_json ?? [],
