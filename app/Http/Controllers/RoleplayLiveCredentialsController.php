@@ -33,6 +33,9 @@ class RoleplayLiveCredentialsController extends Controller
             ], 503);
         }
 
+        $snapshot = $session->snapshot;
+        $firstSpeaker = $snapshot?->scenario_snapshot_json['first_speaker'] ?? 'USER';
+
         return response()->json([
             'provider' => 'gemini',
             'api_version' => $credentials->apiVersion,
@@ -45,6 +48,7 @@ class RoleplayLiveCredentialsController extends Controller
                 'status' => $session->status,
             ],
             'live_config' => $credentials->clientConfig,
+            'first_speaker' => $firstSpeaker,
         ]);
     }
 

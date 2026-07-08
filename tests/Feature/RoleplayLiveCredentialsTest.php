@@ -115,6 +115,40 @@ class RoleplayLiveCredentialsTest extends TestCase
         $this->assertStringNotContainsString('director_snapshot', $body);
     }
 
+    public function test_response_includes_first_speaker_default(): void
+    {
+        Http::fake([
+            'generativelanguage.googleapis.com/*' => Http::response(['name' => 'authTokens/test-token'], 200),
+        ]);
+        config(['gemini.api_key' => 'server-secret-key']);
+        $user = User::factory()->sales()->active()->create();
+        $session = $this->createSessionWithSnapshot($user);
+
+        $response = $this->actingAs($user)
+            ->postJson(route('training.sessions.live-credentials.store', $session->public_id));
+
+        $response->assertOk()
+            ->assertJsonPath('first_speaker', 'SALES');
+    }
+
+    public function test_response_includes_first_speaker_when_ai(): void
+    {
+        Http::fake([
+            'generativelanguage.googleapis.com/*' => Http::response(['name' => 'authTokens/test-token'], 200),
+        ]);
+        config(['gemini.api_key' => 'server-secret-key']);
+        $user = User::factory()->sales()->active()->create();
+        $session = $this->createSessionWithSnapshot($user, scenarioSnapshotOverrides: [
+            'first_speaker' => 'AI',
+        ]);
+
+        $response = $this->actingAs($user)
+            ->postJson(route('training.sessions.live-credentials.store', $session->public_id));
+
+        $response->assertOk()
+            ->assertJsonPath('first_speaker', 'AI');
+    }
+
     public function test_missing_api_key_returns_controlled_error(): void
     {
         Http::fake();
@@ -133,11 +167,14 @@ class RoleplayLiveCredentialsTest extends TestCase
     private function createSessionWithSnapshot(
         User $user,
         RoleplaySessionStatus $status = RoleplaySessionStatus::CREATED,
+        array $scenarioSnapshotOverrides = [],
     ): RoleplaySession {
         $session = RoleplaySession::factory()
             ->forUser($user)
             ->status($status)
             ->create();
+
+        $defaultScenario = RoleplaySessionSnapshot::factory()->definition()['scenario_snapshot_json'];
 
         RoleplaySessionSnapshot::factory()->create([
             'roleplay_session_id' => $session->id,
@@ -146,6 +183,7 @@ class RoleplayLiveCredentialsTest extends TestCase
                 RoleplaySessionSnapshot::factory()->definition()['persona_snapshot_json'],
                 ['hidden_information' => [['information' => 'Rahasia keluarga']]],
             ),
+            'scenario_snapshot_json' => array_merge($defaultScenario, $scenarioSnapshotOverrides),
         ]);
 
         return $session;

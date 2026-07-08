@@ -121,6 +121,20 @@ class GeminiLiveClient {
         return true;
     }
 
+    sendClientContent(turns, turnComplete = true) {
+        if (!this.isReady()) return false;
+
+        try {
+            this.socket.send(JSON.stringify({
+                clientContent: { turns, turnComplete },
+            }));
+        } catch (_) {
+            return false;
+        }
+
+        return true;
+    }
+
     parseMessage(data) {
         if (typeof data !== 'string') return null;
 

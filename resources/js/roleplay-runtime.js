@@ -17,6 +17,8 @@ class RoleplayRuntime {
         this.transcriptEvents = [];
         this.goAwayContext = null;
         this.pendingToolCalls = [];
+        this.firstSpeaker = 'USER';
+        this.aiOpeningTriggered = false;
         this.userSpeechTimer = null;
         this.waitingForAiTimer = null;
         this.interruptionResetTimer = null;
@@ -74,6 +76,8 @@ class RoleplayRuntime {
             const data = await response.json();
             this.ephemeralToken = data.ephemeral_token || null;
             this.credentials = data;
+            this.firstSpeaker = data.first_speaker === 'AI' ? 'AI' : 'USER';
+            this.root.dataset.firstSpeaker = this.firstSpeaker;
 
             if (!this.ephemeralToken) {
                 this.setState('credentials_failed');
@@ -105,6 +109,7 @@ class RoleplayRuntime {
             onSetupComplete: () => {
                 this.setState('live_connected');
                 this.startMicrophoneCapture();
+                this.triggerAiFirstOpening();
             },
             onAudioChunk: (chunk) => this.enqueueAiAudio(chunk),
             onTranscriptEvent: (event) => this.handleTranscriptEvent(event),
@@ -169,6 +174,18 @@ class RoleplayRuntime {
                 this.setConversationState('listening');
             }
         }, 900);
+    }
+
+    triggerAiFirstOpening() {
+        if (this.firstSpeaker !== 'AI' || this.aiOpeningTriggered || !this.liveClient) return;
+
+        this.aiOpeningTriggered = true;
+        this.root.dataset.aiOpeningTriggered = 'true';
+
+        this.liveClient.sendClientContent(
+            [{ role: 'user', parts: [{ text: '[mulai]' }] }],
+            true,
+        );
     }
 
     handleTranscriptEvent(event) {
@@ -246,6 +263,8 @@ class RoleplayRuntime {
         this.root.dataset.liveGoaway = 'false';
         this.root.dataset.liveGoawayReason = 'none';
         this.root.dataset.liveGoawayReconnect = 'none';
+        this.aiOpeningTriggered = false;
+        this.root.dataset.aiOpeningTriggered = 'false';
         this.setConversationState('idle');
     }
 
@@ -298,6 +317,8 @@ class RoleplayRuntime {
         this.pendingToolCalls = [];
         this.root.dataset.liveToolcalls = '0';
         this.root.dataset.liveToolcallLatest = 'none';
+        this.aiOpeningTriggered = false;
+        this.root.dataset.aiOpeningTriggered = 'false';
         this.setConversationState('idle');
     }
 
