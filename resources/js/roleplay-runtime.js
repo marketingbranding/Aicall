@@ -6,6 +6,8 @@ class RoleplayRuntime {
     constructor(root) {
         this.root = root;
         this.credentialsUrl = root.dataset.credentialsUrl;
+        this.statusUrl = this.credentialsUrl.replace('/live-credentials', '/status');
+        this._reportedStatus = null;
         this.state = 'idle';
         this.ephemeralToken = null;
         this.credentials = null;
@@ -52,7 +54,10 @@ class RoleplayRuntime {
             this.ensurePlaybackQueue()?.prime();
             this.requestCredentials();
         });
-        this.stopButton?.addEventListener('click', () => this.stopSessionAudio('audio_stream_stopped'));
+        this.stopButton?.addEventListener('click', () => {
+            this.reportStatus('ENDING', 'USER_END');
+            this.stopSessionAudio('audio_stream_stopped');
+        });
 
         document.addEventListener('roleplay:microphone-allowed', () => {
             this.startButton?.classList.remove('hidden');
@@ -68,6 +73,7 @@ class RoleplayRuntime {
         if (!this.credentialsUrl || this.state === 'requesting_credentials') return;
 
         this.setState('requesting_credentials');
+        this.reportStatus('PREPARING');
 
         try {
             const response = await fetch(this.credentialsUrl, {
@@ -119,6 +125,7 @@ class RoleplayRuntime {
 
         this.liveClient.connect({
             onSetupComplete: () => {
+                this.reportStatus('READY');
                 this.setState('live_connected');
                 this.startMicrophoneCapture();
                 this.triggerAiFirstOpening();
@@ -131,6 +138,7 @@ class RoleplayRuntime {
             onError: () => {
                 this.stopSessionAudio('audio_stream_failed');
                 this.setState('live_connection_failed');
+                this.reportStatus('FAILED', 'FAILURE', 'Gemini Live connection error');
             },
             onClose: (event) => this.handleClose(event),
         });
@@ -218,6 +226,7 @@ class RoleplayRuntime {
         if (this.sessionTimedOut) return;
         this.sessionTimedOut = true;
         this.clearSessionTimer();
+        this.reportStatus('ENDING', 'TIME_LIMIT');
 
         this.stopSessionAudio('time_limit_ending');
         this.liveClient?.close();
@@ -294,6 +303,30 @@ class RoleplayRuntime {
         if (this.liveDebug && typeof console !== 'undefined') {
             console.debug('Live tool call:', call.name, call.args);
         }
+    }
+
+    reportStatus(status, endingType = null, endingReason = null) {
+        if (this._reportedStatus === status) return;
+
+        const payload = { status };
+        if (endingType) {
+            payload.ending_type = endingType;
+        }
+        if (endingReason) {
+            payload.ending_reason = endingReason;
+        }
+
+        fetch(this.statusUrl, {
+            method: 'PATCH',
+            headers: {
+                'Accept': 'application/json',
+                'Content-Type': 'application/json',
+                'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]')?.content || '',
+            },
+            body: JSON.stringify(payload),
+        }).catch(() => {});
+
+        this._reportedStatus = status;
     }
 
     handleClose(event) {
@@ -406,6 +439,7 @@ class RoleplayRuntime {
             this.setState('audio_streaming');
             this.setConversationState('listening');
             this.startSessionTimer();
+            this.reportStatus('ACTIVE');
         } catch (_) {
             this.microphoneCapture?.stop();
             this.microphoneCapture = null;
@@ -494,15 +528,18 @@ class RoleplayRuntime {
     handleCredentialError(status) {
         if (status === 403) {
             this.setState('credentials_failed', 'Akun Anda belum dapat memulai sesi. Hubungi HQ jika status akun sudah berubah.');
+            this.reportStatus('FAILED', 'FAILURE', 'Account status prevented credentials');
             return;
         }
 
         if (status === 503) {
             this.setState('credentials_failed', 'Koneksi Live belum tersedia. Coba lagi sebentar lagi.');
+            this.reportStatus('FAILED', 'FAILURE', 'Live credentials service unavailable');
             return;
         }
 
         this.setState('credentials_failed');
+        this.reportStatus('FAILED', 'FAILURE', 'Credential request failed');
     }
 
     setState(state, customDetail = null) {

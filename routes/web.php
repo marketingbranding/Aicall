@@ -40,6 +40,9 @@ Route::middleware(['auth', 'verified', 'account.active'])->prefix('training')->n
 
     Route::post('/sessions/{publicId}/live-credentials', [\App\Http\Controllers\RoleplayLiveCredentialsController::class, 'store'])
         ->name('sessions.live-credentials.store');
+
+    Route::patch('/sessions/{publicId}/status', [\App\Http\Controllers\RoleplaySessionStatusController::class, 'update'])
+        ->name('sessions.status.update');
 });
 
 Route::middleware(['auth', 'hq'])->prefix('hq')->name('hq.')->group(function () {
