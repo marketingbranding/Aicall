@@ -1,9 +1,14 @@
+import { GeminiLiveClient } from './gemini-live-client';
+
 class RoleplayRuntime {
     constructor(root) {
         this.root = root;
         this.credentialsUrl = root.dataset.credentialsUrl;
         this.state = 'idle';
         this.ephemeralToken = null;
+        this.credentials = null;
+        this.liveClient = null;
+        this.liveDebug = root.dataset.liveDebug === 'true';
 
         this.status = root.querySelector('[data-runtime-status]');
         this.detail = root.querySelector('[data-runtime-detail]');
@@ -42,10 +47,46 @@ class RoleplayRuntime {
 
             const data = await response.json();
             this.ephemeralToken = data.ephemeral_token || null;
-            this.setState(this.ephemeralToken ? 'credentials_ready' : 'credentials_failed');
+            this.credentials = data;
+
+            if (!this.ephemeralToken) {
+                this.setState('credentials_failed');
+                return;
+            }
+
+            this.setState('credentials_ready');
+            this.connectLive();
         } catch (_) {
             this.setState('credentials_failed');
         }
+    }
+
+    connectLive() {
+        if (!this.ephemeralToken || !this.credentials?.model) {
+            this.setState('live_connection_failed');
+            return;
+        }
+
+        this.setState('connecting_live');
+        this.liveClient = new GeminiLiveClient({
+            token: this.ephemeralToken,
+            model: this.credentials.model,
+            liveConfig: this.credentials.live_config || {},
+            debug: this.liveDebug,
+        });
+
+        this.liveClient.connect({
+            onSetupComplete: () => this.setState('live_connected'),
+            onError: () => this.setState('live_connection_failed'),
+            onClose: (event) => {
+                if (this.state === 'live_connection_failed') return;
+
+                this.setState(
+                    event.expired ? 'live_connection_failed' : 'live_closed',
+                    event.expired ? 'Kredensial sementara sudah tidak berlaku. Muat ulang persiapan sesi lalu coba lagi.' : null,
+                );
+            },
+        });
     }
 
     handleCredentialError(status) {
@@ -71,6 +112,10 @@ class RoleplayRuntime {
             requesting_credentials: ['Menyiapkan koneksi', 'Mengambil kredensial sementara. Panggilan belum dimulai.'],
             credentials_ready: ['Kredensial siap', 'Kredensial sementara sudah siap di memori browser. Koneksi suara akan ditambahkan pada tahap berikutnya.'],
             credentials_failed: ['Belum bisa memulai', customDetail || 'Kredensial sementara belum berhasil dibuat. Coba lagi sebentar lagi.'],
+            connecting_live: ['Menghubungkan', 'Membuka sesi Live. Audio belum dikirim.'],
+            live_connected: ['Sesi Live tersambung', 'Handshake Live berhasil. Pengiriman audio akan ditambahkan pada tahap berikutnya.'],
+            live_connection_failed: ['Koneksi belum berhasil', customDetail || 'Sesi Live belum bisa tersambung. Coba lagi sebentar lagi.'],
+            live_closed: ['Koneksi Live tertutup', 'Sesi Live sudah tertutup. Muat ulang halaman jika ingin mencoba lagi.'],
         };
 
         const [status, detail] = messages[state] || messages.idle;
@@ -78,7 +123,12 @@ class RoleplayRuntime {
         if (this.detail) this.detail.textContent = detail;
 
         if (this.startButton) {
-            this.startButton.disabled = state === 'requesting_credentials' || state === 'credentials_ready';
+            this.startButton.disabled = [
+                'requesting_credentials',
+                'credentials_ready',
+                'connecting_live',
+                'live_connected',
+            ].includes(state);
             this.startButton.textContent = state === 'requesting_credentials' ? 'Menyiapkan...' : 'Mulai Sesi';
         }
     }

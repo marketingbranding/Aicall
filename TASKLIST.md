@@ -323,7 +323,7 @@ Verification note 2026-07-07: Enforced RoleplaySessionSnapshot immutability at t
 - [x] Implement ephemeral-token endpoint.
 - [x] Verify short-lived token/config restrictions.
 - [x] Implement browser `RoleplayRuntime`.
-- [ ] Implement `GeminiLiveClient`.
+- [x] Implement `GeminiLiveClient`.
 - [ ] Implement microphone capture.
 - [ ] Implement PCM conversion/resampling according to current API requirements.
 - [ ] Implement streaming microphone audio.
@@ -348,6 +348,8 @@ Verification note 2026-07-08: Re-verified official Google Gemini Live docs and m
 Verification note 2026-07-08: Implemented backend-only Gemini Live ephemeral token provisioning. Added `POST /training/sessions/{publicId}/live-credentials`, owner/status/snapshot checks, active-account enforcement, configured model usage, server-side permanent API key handling, controlled missing-config/provider errors, and a provider request that binds the short-lived token to the Live model/config with encrypted Actor Instructions sent only server-to-Google. Browser response returns only sanitized bootstrap data and the ephemeral token. Added feature coverage for owner access, non-owner denial, pending/suspended denial, invalid status rejection, secret/instruction non-exposure, and missing API key handling. `php artisan test --filter=RoleplayLiveCredentialsTest` passed 6 tests / 26 assertions.
 
 Verification note 2026-07-08: Implemented prepare-page browser `RoleplayRuntime` foundation only. Added a Vite-loaded runtime module with states `idle`, `requesting_credentials`, `credentials_ready`, and `credentials_failed`; `Mulai Sesi` appears after microphone permission succeeds and requests credentials from `POST /training/sessions/{publicId}/live-credentials`. Ephemeral token is held only in memory and is not logged or written to the DOM/storage. No Gemini Live WebSocket connection, microphone audio streaming, or audio playback was implemented. Added server-rendered tests for runtime DOM hooks, credentials endpoint URL, and no permanent API key/private data in prepare HTML. `php artisan test --filter=TrainingBriefingTest` passed 35 tests / 141 assertions.
+
+Verification note 2026-07-08: Implemented browser `GeminiLiveClient` handshake foundation only. The runtime now uses the in-memory ephemeral token to open the official constrained Gemini Live WebSocket endpoint with `access_token`, sends a setup-only message for the configured model/audio modality, and handles `connecting_live`, `live_connected`, `live_connection_failed`, and `live_closed` states with calm Bahasa Indonesia messages. Debug message-shape logging is disabled by default and never logs credentials. No microphone audio streaming, audio playback, transcription handling, tool handling, or Director events were implemented. Added server-rendered tests for Live client hooks and that no token/API key/private data is present in prepare HTML. `php artisan test --filter=TrainingBriefingTest` passed 36 tests / 147 assertions; `npm run build` passed.
 
 - [ ] real Indonesian voice conversation works
 - [ ] user can interrupt AI

@@ -667,10 +667,26 @@ class TrainingBriefingTest extends TestCase
         $response->assertOk();
         $response->assertSee('id="roleplay-runtime"', false);
         $response->assertSee('data-roleplay-runtime', false);
+        $response->assertSee('data-gemini-live-client="pending"', false);
+        $response->assertSee('data-live-debug="false"', false);
         $response->assertSee('data-runtime-state="idle"', false);
         $response->assertSee('data-roleplay-start', false);
         $response->assertSee('Mulai Sesi');
         $response->assertSee(route('training.sessions.live-credentials.store', $session->public_id), false);
+    }
+
+    public function test_prepare_page_does_not_write_ephemeral_token_to_dom(): void
+    {
+        $user = User::factory()->sales()->active()->create();
+        $session = RoleplaySession::factory()->forUser($user)->create();
+        RoleplaySessionSnapshot::factory()->create(['roleplay_session_id' => $session->id]);
+
+        $response = $this->actingAs($user)->get(route('training.sessions.prepare', $session->public_id));
+
+        $response->assertOk();
+        $response->assertDontSee('ephemeral_token');
+        $response->assertDontSee('authTokens/');
+        $response->assertDontSee('access_token=');
     }
 
     public function test_prepare_page_does_not_expose_permanent_api_key(): void

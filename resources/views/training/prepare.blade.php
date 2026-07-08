@@ -105,6 +105,8 @@
                     <div id="roleplay-runtime"
                         class="rounded-2xl border border-stone-200 bg-white p-5 sm:p-6"
                         data-roleplay-runtime
+                        data-gemini-live-client="pending"
+                        data-live-debug="false"
                         data-runtime-state="idle"
                         data-credentials-url="{{ route('training.sessions.live-credentials.store', $session->public_id) }}">
                         <div class="flex flex-col gap-5 sm:flex-row sm:items-start sm:justify-between">
@@ -123,7 +125,7 @@
                         </div>
 
                         <p class="mt-4 text-xs text-gray-500">
-                            Kredensial sementara hanya disimpan di memori browser. Audio belum dikirim dan koneksi Gemini Live belum dibuka pada tahap ini.
+                            Kredensial sementara hanya disimpan di memori browser. Audio belum dikirim dan belum ada audio Gemini yang diputar pada tahap ini.
                         </p>
                     </div>
 
