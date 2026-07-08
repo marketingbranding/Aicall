@@ -2,12 +2,14 @@ import { GeminiLiveClient } from './gemini-live-client';
 import { AiPcmPlaybackQueue } from './ai-pcm-playback-queue';
 import { MicrophoneCapture } from './microphone-capture';
 import { TranscriptEventBuffer } from './transcript-event-buffer';
+import { DirectorEventBridge } from './director-event-bridge';
 
 class RoleplayRuntime {
     constructor(root) {
         this.root = root;
         this.sessionId = root.dataset.sessionId || '';
         this.credentialsUrl = root.dataset.credentialsUrl;
+        this.directorEventsUrl = root.dataset.directorEventsUrl || '';
         this.transcriptUrl = root.dataset.transcriptUrl || root.dataset.credentialsUrl?.replace('/live-credentials', '/transcript') || '';
         this.statusUrl = this.credentialsUrl.replace('/live-credentials', '/status');
         this._reportedStatus = null;
@@ -43,6 +45,7 @@ class RoleplayRuntime {
         this.aiWarningSent = false;
         this.liveDebug = root.dataset.liveDebug === 'true';
         this.transcriptBuffer = null;
+        this.directorBridge = null;
 
         this.status = root.querySelector('[data-runtime-status]');
         this.detail = root.querySelector('[data-runtime-detail]');
@@ -112,6 +115,7 @@ class RoleplayRuntime {
         this._loadReconnectToken();
         this.initTranscriptDebugPanel();
         this.initTranscriptBuffer();
+        this.initDirectorBridge();
         this.startButton?.addEventListener('click', () => {
             this.ensurePlaybackQueue()?.prime();
             this.requestCredentials();
@@ -192,6 +196,10 @@ class RoleplayRuntime {
             return;
         }
 
+        if (this.directorBridge) {
+            this.directorBridge.liveClient = null;
+        }
+
         this.setState('connecting_live');
         this.liveClient = new GeminiLiveClient({
             token: this.ephemeralToken,
@@ -199,6 +207,10 @@ class RoleplayRuntime {
             liveConfig: this.credentials.live_config || {},
             debug: this.liveDebug,
         });
+
+        if (this.directorBridge) {
+            this.directorBridge.liveClient = this.liveClient;
+        }
 
         this.liveClient.connect({
             onSetupComplete: () => {
@@ -409,6 +421,20 @@ class RoleplayRuntime {
         this.transcriptPanel.setAttribute('aria-hidden', 'false');
     }
 
+    initDirectorBridge() {
+        if (this.directorBridge || !this.directorEventsUrl) return;
+
+        this.directorBridge = new DirectorEventBridge({
+            directorEventsUrl: this.directorEventsUrl,
+            csrfToken: document.querySelector('meta[name="csrf-token"]')?.content || '',
+            liveClient: null,
+            debug: this.liveDebug,
+        });
+
+        this.root.dataset.directorEventsProcessed = '0';
+        this.root.dataset.directorEventsLatest = 'none';
+    }
+
     initTranscriptBuffer() {
         if (this.transcriptBuffer || !this.transcriptUrl) return;
 
@@ -459,8 +485,13 @@ class RoleplayRuntime {
         this.root.dataset.liveToolcalls = String(this.pendingToolCalls.length);
         this.root.dataset.liveToolcallLatest = call.name;
 
-        if (this.liveDebug && typeof console !== 'undefined') {
-            console.debug('Live tool call:', call.name, call.args);
+        if (this.directorBridge) {
+            this.directorBridge.processToolCall(call).then((result) => {
+                if (result) {
+                    this.root.dataset.directorEventsProcessed = String(this.directorBridge.getProcessedCount());
+                    this.root.dataset.directorEventsLatest = result.accepted ? 'accepted' : 'rejected';
+                }
+            });
         }
     }
 
@@ -521,12 +552,20 @@ class RoleplayRuntime {
         this.liveClient?.close();
         this.liveClient = null;
 
+        if (this.directorBridge) {
+            this.directorBridge.liveClient = null;
+        }
+
         this.liveClient = new GeminiLiveClient({
             token: this.ephemeralToken,
             model: this.credentials.model,
             liveConfig: this.credentials.live_config || {},
             debug: this.liveDebug,
         });
+
+        if (this.directorBridge) {
+            this.directorBridge.liveClient = this.liveClient;
+        }
 
         const currentReconnectToken = this.reconnectToken;
 
@@ -636,6 +675,9 @@ class RoleplayRuntime {
         this.pendingToolCalls = [];
         this.root.dataset.liveToolcalls = '0';
         this.root.dataset.liveToolcallLatest = 'none';
+        this.root.dataset.directorEventsProcessed = '0';
+        this.root.dataset.directorEventsLatest = 'none';
+        this.directorBridge?.reset();
         this.aiOpeningTriggered = false;
         this.root.dataset.aiOpeningTriggered = 'false';
         this.setConversationState('idle');

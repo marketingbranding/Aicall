@@ -421,7 +421,7 @@ Verification note 2026-07-08 (finalize): Created RoleplayTranscriptFinalizeContr
 
 - [ ] Define strict `report_roleplay_event` Live tool schema (frontend).
 - [ ] Add semantic-tool rules to Actor Instructions (frontend).
-- [ ] Implement browser tool-call bridge (frontend).
+- [x] Implement browser tool-call bridge (frontend).
 - [x] Implement authenticated Director event endpoint.
 - [x] Validate event enums/schema.
 - [x] Deduplicate event (DB fingerprint + in-memory).
@@ -441,7 +441,10 @@ Verification note 2026-07-08 (finalize): Created RoleplayTranscriptFinalizeContr
 - [x] Director engine processes events and returns state changes.
 - [x] Director notes persisted.
 - [x] Machine state persisted and restored across requests.
-- [x] All 728 tests pass / 2258 assertions, npm build green.
+- [x] All 731 tests pass / 2267 assertions, npm build green (63 modules).
+- [x] Browser tool-call bridge: DirectorEventBridge module processes `report_roleplay_event` calls, sends to endpoint, returns tool response.
+- [x] DOM hooks: `data-director-events-url`, `data-director-events-processed`, `data-director-events-latest`.
+- [x] Security: no tool-call logging, no token/DOM exposure, no actor instruction exposure.
 
 ### Phase 10 Manual Verification
 

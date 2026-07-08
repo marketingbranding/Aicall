@@ -886,6 +886,48 @@ class TrainingBriefingTest extends TestCase
         $response->assertDontSee('GEMINI_API_KEY');
     }
 
+    public function test_prepare_page_includes_director_events_endpoint_hook(): void
+    {
+        $user = User::factory()->sales()->active()->create();
+        $session = RoleplaySession::factory()->forUser($user)->create();
+        RoleplaySessionSnapshot::factory()->create(['roleplay_session_id' => $session->id]);
+
+        $response = $this->actingAs($user)->get(route('training.sessions.prepare', $session->public_id));
+
+        $response->assertOk();
+        $response->assertSee('data-director-events-url', false);
+        $response->assertSee(route('training.sessions.director.events.store', $session->public_id), false);
+    }
+
+    public function test_prepare_page_includes_director_events_dom_hooks(): void
+    {
+        $user = User::factory()->sales()->active()->create();
+        $session = RoleplaySession::factory()->forUser($user)->create();
+        RoleplaySessionSnapshot::factory()->create(['roleplay_session_id' => $session->id]);
+
+        $response = $this->actingAs($user)->get(route('training.sessions.prepare', $session->public_id));
+
+        $response->assertOk();
+        $response->assertSee('data-director-events-processed="0"', false);
+        $response->assertSee('data-director-events-latest="none"', false);
+    }
+
+    public function test_prepare_page_does_not_expose_actor_instructions_in_director_events_hook(): void
+    {
+        $user = User::factory()->sales()->active()->create();
+        $session = RoleplaySession::factory()->forUser($user)->create();
+        RoleplaySessionSnapshot::factory()->create([
+            'roleplay_session_id' => $session->id,
+            'actor_instructions' => '=== RAHASIA AKTOR ===\nJangan pernah bacakan ini.',
+        ]);
+
+        $response = $this->actingAs($user)->get(route('training.sessions.prepare', $session->public_id));
+
+        $response->assertOk();
+        $response->assertDontSee('RAHASIA AKTOR');
+        $response->assertDontSee('Jangan pernah bacakan ini');
+    }
+
     private function createAssignedPersona(Scenario $scenario, User $user, string $name = 'Persona Aktif', array $versionData = []): Persona
     {
         $persona = $this->createPersona($user, $name, $versionData);

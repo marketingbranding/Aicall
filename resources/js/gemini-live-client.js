@@ -106,6 +106,22 @@ class GeminiLiveClient {
         }));
     }
 
+    sendToolResponse(name, response) {
+        if (!this.isReady() || !name) return false;
+
+        try {
+            this.socket.send(JSON.stringify({
+                toolResponse: {
+                    functionResponses: [{ name, response }],
+                },
+            }));
+        } catch (_) {
+            return false;
+        }
+
+        return true;
+    }
+
     sendAudioChunk(chunk) {
         if (!this.isReady() || !chunk?.audio || !chunk?.mimeType) {
             return false;

@@ -129,6 +129,9 @@
                         data-session-warning="false"
                         data-session-duration-seconds="{{ $maxDurationSeconds }}"
                         data-credentials-url="{{ route('training.sessions.live-credentials.store', $session->public_id) }}"
+                        data-director-events-url="{{ route('training.sessions.director.events.store', $session->public_id) }}"
+                        data-director-events-processed="0"
+                        data-director-events-latest="none"
                         data-transcript-url="{{ route('training.sessions.transcript.store', $session->public_id) }}">
                         <div class="flex flex-col gap-5 sm:flex-row sm:items-start sm:justify-between">
                             <div class="space-y-2">
