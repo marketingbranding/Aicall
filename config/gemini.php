@@ -1,7 +1,14 @@
 <?php
 
 return [
+    'api_key' => env('GEMINI_API_KEY'),
+
     'live' => [
+        'api_version' => env('GEMINI_LIVE_API_VERSION', 'v1alpha'),
+        'auth_token_endpoint' => env('GEMINI_LIVE_AUTH_TOKEN_ENDPOINT', 'https://generativelanguage.googleapis.com/v1alpha/auth_tokens'),
+        'token_uses' => 1,
+        'new_session_ttl_seconds' => 60,
+        'message_ttl_seconds' => 1800,
         'model' => env('GEMINI_LIVE_MODEL', 'gemini-3.1-flash-live-preview'),
 
         'models' => [

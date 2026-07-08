@@ -21,10 +21,18 @@ class EnsureAccountIsActive
         }
 
         if ($user->isPendingApproval()) {
+            if ($request->expectsJson()) {
+                return response()->json(['message' => 'Akun belum disetujui.'], 403);
+            }
+
             return redirect()->route('account.pending');
         }
 
         if ($user->isSuspended()) {
+            if ($request->expectsJson()) {
+                return response()->json(['message' => 'Akun sedang ditangguhkan.'], 403);
+            }
+
             return redirect()->route('account.suspended');
         }
 

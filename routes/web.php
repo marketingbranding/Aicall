@@ -37,6 +37,9 @@ Route::middleware(['auth', 'verified', 'account.active'])->prefix('training')->n
 
     Route::get('/sessions/{publicId}/prepare', [\App\Http\Controllers\TrainingScenarioController::class, 'prepare'])
         ->name('sessions.prepare');
+
+    Route::post('/sessions/{publicId}/live-credentials', [\App\Http\Controllers\RoleplayLiveCredentialsController::class, 'store'])
+        ->name('sessions.live-credentials.store');
 });
 
 Route::middleware(['auth', 'hq'])->prefix('hq')->name('hq.')->group(function () {

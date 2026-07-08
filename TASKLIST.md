@@ -319,9 +319,9 @@ Verification note 2026-07-07: Enforced RoleplaySessionSnapshot immutability at t
 ## Phase 8 — Gemini Live Vertical Voice Integration
 
 - [x] Re-verify current official Gemini Live API and model capabilities.
-- [ ] Implement `GeminiLiveRoleplayProvider` server-side provisioning service.
-- [ ] Implement ephemeral-token endpoint.
-- [ ] Verify short-lived token/config restrictions.
+- [x] Implement `GeminiLiveRoleplayProvider` server-side provisioning service.
+- [x] Implement ephemeral-token endpoint.
+- [x] Verify short-lived token/config restrictions.
 - [ ] Implement browser `RoleplayRuntime`.
 - [ ] Implement `GeminiLiveClient`.
 - [ ] Implement microphone capture.
@@ -344,6 +344,8 @@ Verification note 2026-07-07: Enforced RoleplaySessionSnapshot immutability at t
 ### Phase 8 Manual Verification
 
 Verification note 2026-07-08: Re-verified official Google Gemini Live docs and model pages. `gemini-3.1-flash-live-preview` remains current for Live roleplay. Updated `config/gemini.php` to disable unsupported Gemini 3.1 affective dialogue and proactive audio while preserving native audio, transcription, realtime text input, synchronous function calling, session resumption, and context compression. Documented ephemeral token defaults/limits, 10-minute connection resets, GoAway/session resumption behavior, 15-minute audio session limit, function-calling limitations, and direct browser-to-Gemini requirements in `docs/07_GEMINI_LIVE.md`.
+
+Verification note 2026-07-08: Implemented backend-only Gemini Live ephemeral token provisioning. Added `POST /training/sessions/{publicId}/live-credentials`, owner/status/snapshot checks, active-account enforcement, configured model usage, server-side permanent API key handling, controlled missing-config/provider errors, and a provider request that binds the short-lived token to the Live model/config with encrypted Actor Instructions sent only server-to-Google. Browser response returns only sanitized bootstrap data and the ephemeral token. Added feature coverage for owner access, non-owner denial, pending/suspended denial, invalid status rejection, secret/instruction non-exposure, and missing API key handling. `php artisan test --filter=RoleplayLiveCredentialsTest` passed 6 tests / 26 assertions.
 
 - [ ] real Indonesian voice conversation works
 - [ ] user can interrupt AI
