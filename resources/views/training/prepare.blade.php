@@ -108,7 +108,9 @@
                         data-gemini-live-client="pending"
                         data-microphone-capture="pending"
                         data-audio-stream="pending"
+                        data-ai-playback="pending"
                         data-input-audio-format="pcm16-16000-le"
+                        data-output-audio-format="pcm16-24000-le"
                         data-live-debug="false"
                         data-runtime-state="idle"
                         data-credentials-url="{{ route('training.sessions.live-credentials.store', $session->public_id) }}">
@@ -133,7 +135,7 @@
                         </div>
 
                         <p class="mt-4 text-xs text-gray-500">
-                            Kredensial sementara hanya disimpan di memori browser. Mikrofon dikirim sebagai PCM 16 kHz setelah sesi Live tersambung. Audio Gemini belum diputar pada tahap ini.
+                            Kredensial sementara hanya disimpan di memori browser. Mikrofon dikirim sebagai PCM 16 kHz setelah sesi Live tersambung. Audio Gemini diputar sebagai PCM 24 kHz tanpa menyimpan transkrip.
                         </p>
                     </div>
 

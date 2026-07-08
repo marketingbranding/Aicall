@@ -327,7 +327,7 @@ Verification note 2026-07-07: Enforced RoleplaySessionSnapshot immutability at t
 - [x] Implement microphone capture.
 - [x] Implement PCM conversion/resampling according to current API requirements.
 - [x] Implement streaming microphone audio.
-- [ ] Implement AI PCM playback queue.
+- [x] Implement AI PCM playback queue.
 - [ ] Implement speaking/listening state events.
 - [ ] Implement barge-in/interruption handling.
 - [ ] Clear stale playback on model interruption.
@@ -356,6 +356,8 @@ Verification note 2026-07-08: Implemented browser microphone capture foundation.
 Verification note 2026-07-08: Implemented isolated browser PCM utilities for Gemini Live input requirements. Added `audio-pcm-utils.js` with `resampleTo16k`, `float32ToPcm16`, `prepareGeminiLivePcm16`, and `encodeBase64`; PCM16 output is written explicitly little-endian via `DataView` and returned as an `ArrayBuffer` with metadata `audio/pcm;rate=16000`, `LINEAR16`, and `littleEndian: true`. `MicrophoneCapture` now delegates conversion/resampling to these utilities and still does not stream audio to Gemini. No JS test runner is configured, so verification is build/manual-boundary based plus existing PHP render/security tests. `php artisan test` and `npm run build` passed.
 
 Verification note 2026-07-08: Implemented browser microphone audio streaming to Gemini Live after setup completion. `GeminiLiveClient.sendAudioChunk()` now safely sends base64-encoded PCM16 16 kHz chunks as `realtimeInput.mediaChunks[]` with `mimeType: audio/pcm;rate=16000`, only when the WebSocket is open and Live setup has completed; not-ready/send failures return false without logging raw audio or token. `RoleplayRuntime` wires `MicrophoneCapture` chunks to the Live client and handles `audio_streaming`, `audio_stream_failed`, and `audio_stream_stopped`; streaming stops on Live close/failure, user `Hentikan Audio`, `pagehide`, and `beforeunload`. No Gemini output playback, transcription persistence, or Director Notes were implemented. Added prepare-page render coverage for streaming hooks while existing secret/private-data exposure tests remain in place. `php artisan test` passed 646 tests / 1953 assertions; `npm run build` passed.
+
+Verification note 2026-07-08: Implemented browser AI PCM playback queue. Added `AiPcmPlaybackQueue` to decode Gemini output `audio/pcm` chunks as PCM16 little-endian at 24 kHz, enqueue chunks in order, schedule playback through Web Audio API, and clear current/queued playback on interruption events. `GeminiLiveClient` now extracts audio parts from Live server content and surfaces interruption signals without logging raw audio. Runtime handles `ai_speaking`, `playback_error`, and `playback_idle`, primes playback from the user start gesture, and cleans playback on Live close/failure, user stop, `pagehide`, and `beforeunload`. No transcript persistence, Director Notes, or evaluation were implemented. Added prepare-page render coverage for playback hooks and 24 kHz output format. `php artisan test` passed 647 tests / 1957 assertions; `npm run build` passed.
 
 - [ ] real Indonesian voice conversation works
 - [ ] user can interrupt AI

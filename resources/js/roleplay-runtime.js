@@ -1,4 +1,5 @@
 import { GeminiLiveClient } from './gemini-live-client';
+import { AiPcmPlaybackQueue } from './ai-pcm-playback-queue';
 import { MicrophoneCapture } from './microphone-capture';
 
 class RoleplayRuntime {
@@ -10,6 +11,7 @@ class RoleplayRuntime {
         this.credentials = null;
         this.liveClient = null;
         this.microphoneCapture = null;
+        this.playbackQueue = null;
         this.audioStreaming = false;
         this.liveDebug = root.dataset.liveDebug === 'true';
 
@@ -21,15 +23,18 @@ class RoleplayRuntime {
 
     init() {
         this.setState('idle');
-        this.startButton?.addEventListener('click', () => this.requestCredentials());
-        this.stopButton?.addEventListener('click', () => this.stopAudioStreaming('audio_stream_stopped'));
+        this.startButton?.addEventListener('click', () => {
+            this.ensurePlaybackQueue()?.prime();
+            this.requestCredentials();
+        });
+        this.stopButton?.addEventListener('click', () => this.stopSessionAudio('audio_stream_stopped'));
 
         document.addEventListener('roleplay:microphone-allowed', () => {
             this.startButton?.classList.remove('hidden');
         });
 
-        window.addEventListener('beforeunload', () => this.stopAudioStreaming('audio_stream_stopped'));
-        window.addEventListener('pagehide', () => this.stopAudioStreaming('audio_stream_stopped'));
+        window.addEventListener('beforeunload', () => this.stopSessionAudio('audio_stream_stopped'));
+        window.addEventListener('pagehide', () => this.stopSessionAudio('audio_stream_stopped'));
     }
 
     async requestCredentials() {
@@ -88,12 +93,14 @@ class RoleplayRuntime {
                 this.setState('live_connected');
                 this.startMicrophoneCapture();
             },
+            onAudioChunk: (chunk) => this.enqueueAiAudio(chunk),
+            onInterrupted: () => this.clearAiPlayback(),
             onError: () => {
-                this.stopAudioStreaming('audio_stream_failed');
+                this.stopSessionAudio('audio_stream_failed');
                 this.setState('live_connection_failed');
             },
             onClose: (event) => {
-                this.stopAudioStreaming('audio_stream_stopped');
+                this.stopSessionAudio('audio_stream_stopped');
 
                 if (this.state === 'live_connection_failed') return;
 
@@ -103,6 +110,37 @@ class RoleplayRuntime {
                 );
             },
         });
+    }
+
+    ensurePlaybackQueue() {
+        if (this.playbackQueue) return this.playbackQueue;
+
+        this.playbackQueue = new AiPcmPlaybackQueue({
+            outputSampleRate: 24000,
+            onSpeaking: () => this.setState('ai_speaking'),
+            onIdle: () => {
+                if (this.state === 'ai_speaking' || this.state === 'playback_error') {
+                    this.setState('playback_idle');
+                }
+            },
+            onError: () => this.setState('playback_error'),
+        });
+
+        return this.playbackQueue;
+    }
+
+    enqueueAiAudio(chunk) {
+        this.ensurePlaybackQueue()?.enqueue(chunk);
+    }
+
+    clearAiPlayback() {
+        this.playbackQueue?.clear();
+    }
+
+    stopSessionAudio(state = 'audio_stream_stopped') {
+        this.stopAudioStreaming(state);
+        this.playbackQueue?.close();
+        this.playbackQueue = null;
     }
 
     async startMicrophoneCapture() {
@@ -183,6 +221,12 @@ class RoleplayRuntime {
             this.root.dataset.audioStream = 'failed';
         } else if (state === 'audio_stream_stopped') {
             this.root.dataset.audioStream = 'stopped';
+        } else if (state === 'ai_speaking') {
+            this.root.dataset.aiPlayback = 'speaking';
+        } else if (state === 'playback_error') {
+            this.root.dataset.aiPlayback = 'error';
+        } else if (state === 'playback_idle') {
+            this.root.dataset.aiPlayback = 'idle';
         }
 
         const messages = {
@@ -200,6 +244,9 @@ class RoleplayRuntime {
             audio_streaming: ['Latihan suara aktif', 'Audio mikrofon PCM 16 kHz sedang dikirim ke Gemini Live. Audio balasan belum diputar pada tahap ini.'],
             audio_stream_failed: ['Streaming audio terhenti', 'Audio mikrofon belum bisa dikirim. Periksa koneksi lalu mulai ulang persiapan sesi.'],
             audio_stream_stopped: ['Streaming audio berhenti', 'Pengiriman audio mikrofon sudah dihentikan dan track browser sudah ditutup.'],
+            ai_speaking: ['AI sedang berbicara', 'Audio Gemini Live sedang diputar berurutan dari antrean PCM 24 kHz.'],
+            playback_error: ['Audio AI bermasalah', 'Audio balasan belum bisa diputar. Sesi dapat dimulai ulang dari halaman persiapan.'],
+            playback_idle: ['Audio AI selesai', 'Antrean audio Gemini kosong. Mikrofon tetap berjalan jika sesi masih aktif.'],
         };
 
         const [status, detail] = messages[state] || messages.idle;
@@ -214,11 +261,13 @@ class RoleplayRuntime {
                 'live_connected',
                 'microphone_capturing',
                 'audio_streaming',
+                'ai_speaking',
             ].includes(state);
+            this.startButton.disabled = this.startButton.disabled || this.audioStreaming;
             this.startButton.textContent = state === 'requesting_credentials' ? 'Menyiapkan...' : 'Mulai Sesi';
         }
 
-        this.stopButton?.classList.toggle('hidden', state !== 'audio_streaming');
+        this.stopButton?.classList.toggle('hidden', !this.audioStreaming);
     }
 }
 

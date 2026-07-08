@@ -704,6 +704,20 @@ class TrainingBriefingTest extends TestCase
         $response->assertSee('Hentikan Audio');
     }
 
+    public function test_prepare_page_includes_ai_playback_hooks(): void
+    {
+        $user = User::factory()->sales()->active()->create();
+        $session = RoleplaySession::factory()->forUser($user)->create();
+        RoleplaySessionSnapshot::factory()->create(['roleplay_session_id' => $session->id]);
+
+        $response = $this->actingAs($user)->get(route('training.sessions.prepare', $session->public_id));
+
+        $response->assertOk();
+        $response->assertSee('data-ai-playback="pending"', false);
+        $response->assertSee('data-output-audio-format="pcm16-24000-le"', false);
+        $response->assertSee('PCM 24 kHz');
+    }
+
     public function test_prepare_page_does_not_write_ephemeral_token_to_dom(): void
     {
         $user = User::factory()->sales()->active()->create();

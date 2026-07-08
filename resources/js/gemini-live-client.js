@@ -11,7 +11,7 @@ class GeminiLiveClient {
         this.setupComplete = false;
     }
 
-    connect({ onOpen, onSetupComplete, onError, onClose } = {}) {
+    connect({ onOpen, onSetupComplete, onAudioChunk, onInterrupted, onError, onClose } = {}) {
         if (!this.token || !this.model || !this.WebSocketClass) {
             onError?.({ kind: 'configuration' });
             return;
@@ -30,6 +30,12 @@ class GeminiLiveClient {
             if (message?.setupComplete) {
                 this.setupComplete = true;
                 onSetupComplete?.();
+            }
+
+            this.extractAudioChunks(message).forEach((chunk) => onAudioChunk?.(chunk));
+
+            if (this.isInterrupted(message)) {
+                onInterrupted?.();
             }
 
             if (this.debug) {
@@ -110,6 +116,29 @@ class GeminiLiveClient {
         } catch (_) {
             return null;
         }
+    }
+
+    extractAudioChunks(message) {
+        const parts = message?.serverContent?.modelTurn?.parts
+            || message?.server_content?.model_turn?.parts
+            || [];
+
+        return parts
+            .map((part) => part.inlineData || part.inline_data || null)
+            .filter((inlineData) => inlineData?.data && String(inlineData.mimeType || inlineData.mime_type || '').toLowerCase().startsWith('audio/pcm'))
+            .map((inlineData) => ({
+                data: inlineData.data,
+                mimeType: inlineData.mimeType || inlineData.mime_type,
+            }));
+    }
+
+    isInterrupted(message) {
+        return Boolean(
+            message?.serverContent?.interrupted
+            || message?.serverContent?.generationInterrupted
+            || message?.server_content?.interrupted
+            || message?.server_content?.generation_interrupted,
+        );
     }
 
     looksLikeTokenFailure(event) {
