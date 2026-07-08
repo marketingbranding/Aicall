@@ -264,6 +264,13 @@ class HiddenInfoStateMachine
         return $currentTrust >= $requiredTrust;
     }
 
+    public function restoreState(string $key, HiddenInfoState $state): void
+    {
+        if (isset($this->states[$key])) {
+            $this->states[$key] = $state;
+        }
+    }
+
     public function reset(): void
     {
         $this->states = [];

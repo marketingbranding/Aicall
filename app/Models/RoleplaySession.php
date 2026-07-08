@@ -75,6 +75,21 @@ class RoleplaySession extends Model
         return $this->hasMany(RoleplayTranscriptTurn::class, 'roleplay_session_id');
     }
 
+    public function directorEvents(): HasMany
+    {
+        return $this->hasMany(RoleplayEvent::class, 'roleplay_session_id');
+    }
+
+    public function directorNotes(): HasMany
+    {
+        return $this->hasMany(DirectorNote::class, 'roleplay_session_id');
+    }
+
+    public function directorStateSnapshot(): HasOne
+    {
+        return $this->hasOne(DirectorStateSnapshot::class, 'roleplay_session_id');
+    }
+
     public function scopeForUser($query, User $user): void
     {
         $query->where('user_id', $user->id);

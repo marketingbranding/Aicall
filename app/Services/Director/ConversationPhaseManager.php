@@ -163,6 +163,11 @@ class ConversationPhaseManager
         );
     }
 
+    public function restorePhase(ConversationPhase $phase): void
+    {
+        $this->currentPhase = $phase;
+    }
+
     public function reset(?ConversationPhase $initialPhase = null): void
     {
         $this->currentPhase = $initialPhase ?? ConversationPhase::OPENING;

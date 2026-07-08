@@ -417,21 +417,31 @@ Verification note 2026-07-08 (finalize): Created RoleplayTranscriptFinalizeContr
 
 ---
 
-## Phase 10 — Sparse Director Semantic Tool Integration
+## Phase 10 — Sparse Director Semantic Tool Integration (Backend)
 
-- [ ] Define strict `report_roleplay_event` Live tool schema.
-- [ ] Add semantic-tool rules to Actor Instructions.
-- [ ] Implement browser tool-call bridge.
-- [ ] Implement authenticated Director event endpoint.
-- [ ] Validate event enums/schema.
-- [ ] Deduplicate event.
-- [ ] Apply Director transition.
-- [ ] Persist meaningful event/state transition.
-- [ ] Return fast tool response.
-- [ ] Return optional Director guidance.
-- [ ] Send approved Director Notes through realtime text input.
+- [ ] Define strict `report_roleplay_event` Live tool schema (frontend).
+- [ ] Add semantic-tool rules to Actor Instructions (frontend).
+- [ ] Implement browser tool-call bridge (frontend).
+- [x] Implement authenticated Director event endpoint.
+- [x] Validate event enums/schema.
+- [x] Deduplicate event (DB fingerprint + in-memory).
+- [x] Apply Director transition.
+- [x] Persist meaningful event/state transition.
+- [x] Return fast tool response.
+- [x] Return optional Director guidance (director notes).
+- [ ] Send approved Director Notes through realtime text input (frontend).
 - [ ] Implement `request_roleplay_end` tool.
 - [ ] Validate scenario + Director ending eligibility.
+
+### Phase 10 Verification
+
+- [x] Backend endpoint working: 12 feature tests (44 assertions).
+- [x] Event validation (event_type, severity, topics, keys).
+- [x] DB-level dedup via fingerprint unique constraint.
+- [x] Director engine processes events and returns state changes.
+- [x] Director notes persisted.
+- [x] Machine state persisted and restored across requests.
+- [x] All 728 tests pass / 2258 assertions, npm build green.
 
 ### Phase 10 Manual Verification
 

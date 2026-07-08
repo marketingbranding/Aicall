@@ -215,6 +215,13 @@ class ObjectionStateMachine
         return null;
     }
 
+    public function restoreState(string $key, ObjectionState $state): void
+    {
+        if (isset($this->states[$key])) {
+            $this->states[$key] = $state;
+        }
+    }
+
     public function reset(): void
     {
         $this->states = [];

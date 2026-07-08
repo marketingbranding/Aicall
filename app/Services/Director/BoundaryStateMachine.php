@@ -201,6 +201,11 @@ class BoundaryStateMachine
         return max(0, $threshold - $this->eventsSinceLastBoundaryTest);
     }
 
+    public function restoreState(BoundaryState $state): void
+    {
+        $this->currentState = $state;
+    }
+
     public function reset(): void
     {
         $this->currentState = BoundaryState::NOT_TESTED;

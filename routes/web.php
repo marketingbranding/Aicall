@@ -49,6 +49,9 @@ Route::middleware(['auth', 'verified', 'account.active'])->prefix('training')->n
 
     Route::post('/sessions/{publicId}/transcript/finalize', [\App\Http\Controllers\RoleplayTranscriptFinalizeController::class, 'store'])
         ->name('sessions.transcript.finalize');
+
+    Route::post('/sessions/{publicId}/director/events', [\App\Http\Controllers\RoleplayDirectorEventController::class, 'store'])
+        ->name('sessions.director.events.store');
 });
 
 Route::middleware(['auth', 'hq'])->prefix('hq')->name('hq.')->group(function () {
