@@ -1,35 +1,38 @@
 # AGENTS.md — Session Memory for AI Coding Assistants
 
 ## Objective
-- Phase 9: Browser TranscriptEventBuffer → server persistence.
+- Phase 9: TranscriptAssembler validation, interrupted AI turn handling, transcript integrity status.
 
 ## Important Details
-- Buffer is `resources/js/transcript-event-buffer.js` — standalone ES class.
-- Consumes normalized transcript events from `GeminiLiveClient` via `RoleplayRuntime.handleTranscriptEvent`.
-- Assigns stable monotonic sequence numbers at submission time.
-- Submits to `POST /training/sessions/{publicId}/transcript` only for final turns.
-- Partial events buffered in memory: one pending partial per speaker (USER/AI).
-- Deduplication: tracks `_submittedSequences` (Set) and `_submittedTexts` (Set) per seq:speaker:text.
-- Server-side `updateOrCreate` on `(session_id, sequence)` provides idempotency.
-- Buffer starts when audio streaming begins (ACTIVE session).
-- Buffer flushes pending partials + stops on `stopSessionAudio`, `handleSessionTimeLimit`, or explicit flush.
-- Buffer serializes submissions (enqueue if one in flight).
-- Runs entirely in-browser; no token, API key, actor instructions, or Director state exposed.
-- `data-transcript-url` attribute on the runtime DOM root.
+- `TranscriptAssembler` at `app/Services/Transcript/TranscriptAssembler.php`.
+- Reads `RoleplayTranscriptTurn` records for a `RoleplaySession`, ordered by sequence ASC.
+- Returns `TranscriptAssemblyResult` DTO with integrity, turns, issues, interruptedTurns.
+- Validation rules:
+  - Sequence ordering: detects gaps between expected contiguous sequences.
+  - Duplicate sequences: detects same sequence appearing twice (safety net — DB unique key prevents this).
+  - Missing/empty text: null or whitespace-only text flagged.
+  - Speaker validity: must be `USER` or `AI`.
+  - Partial vs final: any non-FINAL status tracked; AI PARTIAL turns flagged as interrupted.
+- Integrity rules:
+  - No turns → `FAILED`.
+  - Any gap, partial, empty text, invalid speaker, invalid status → `PARTIAL`.
+  - All FINAL, contiguous, valid data → `COMPLETE`.
+- Interrupted AI turn detection: any AI turn with status `PARTIAL` is flagged in `interruptedTurns` array on the result.
+- `TranscriptAssemblyResult` is a readonly DTO with `integrity`, `turns`, `issues`, `interruptedTurns`.
+- `session.transcript_integrity` updated via `updateQuietly()` when changed.
+- `RoleplaySession.transcriptTurns()` hasMany relationship added.
+- No AI model called, no evaluation dispatch, no Director event classifier.
 
 ## Files Created/Modified
-- `resources/js/transcript-event-buffer.js` (NEW) — TranscriptEventBuffer class
-- `resources/js/roleplay-runtime.js` — imported buffer, wired `initTranscriptBuffer()`, feed events, flush/stop lifecycle
-- `resources/views/training/prepare.blade.php` — added `data-transcript-url`, updated description text
-- `tests/Feature/TrainingBriefingTest.php` — added `test_prepare_page_includes_transcript_endpoint_hook`, updated changed text assertions
+- `app/Services/Transcript/TranscriptAssembler.php` (NEW) — server-side assembler service
+- `app/Services/Transcript/TranscriptAssemblyResult.php` (NEW) — readonly result DTO
+- `app/Models/RoleplaySession.php` — added `transcriptTurns()` HasMany relationship, HasMany import
+- `tests/Unit/Services/Transcript/TranscriptAssemblerTest.php` (NEW) — 12 tests / 54 assertions
 
 ## Work State
 - All files created/modified as above.
-- Tests: 693 passing (2124 assertions) — up from 692.
-- Build: `npm run build` passes (62 modules, up from 61).
+- Tests: 705 passing (2178 assertions) — up from 693.
+- Build: `npm run build` passes (62 modules).
 
 ## Next Incomplete Task (TASKLIST.md Phase 9)
-- [ ] Implement `TranscriptAssembler` validation (server-side turn assembly)
-- [ ] Implement interrupted AI turn handling
-- [ ] Implement transcript integrity status
 - [ ] Implement idempotent transcript finalization

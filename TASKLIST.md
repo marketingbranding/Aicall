@@ -379,22 +379,31 @@ Verification note 2026-07-08: `GeminiLiveClient` message handler now processes a
 
 ## Phase 9 — Transcript Normalization
 
-- [ ] Implement browser `TranscriptEventBuffer`.
-- [ ] Implement server transcript final-turn endpoint/protocol.
-- [ ] Implement `TranscriptAssembler` validation.
-- [ ] Implement sequence ordering.
-- [ ] Implement duplicate prevention.
-- [ ] Implement interrupted AI turn handling.
-- [ ] Implement transcript integrity status.
+- [x] Implement browser `TranscriptEventBuffer`.
+- [x] Implement server transcript final-turn endpoint/protocol.
+- [x] Implement `TranscriptAssembler` validation.
+- [x] Implement sequence ordering.
+- [x] Implement duplicate prevention.
+- [x] Implement interrupted AI turn handling.
+- [x] Implement transcript integrity status.
 - [ ] Implement idempotent transcript finalization.
 
 ### Phase 9 Tests
 
-- [ ] partial accumulation
-- [ ] duplicate final prevention
-- [ ] ordering
-- [ ] interruption handling
-- [ ] finalization idempotency
+- [x] ordered final transcript assembly
+- [x] duplicate/update behavior remains safe
+- [x] missing sequence detected
+- [x] empty text detected
+- [x] partial-only transcript becomes PARTIAL
+- [x] clean final transcript becomes COMPLETE
+- [x] no turns becomes FAILED
+- [x] interrupted AI turn detected
+- [x] session transcript_integrity is updated
+- [x] mixed partial and final transcript
+- [x] existing tests still pass
+- [x] multiple gaps detected
+
+Verification note 2026-07-08: Created TranscriptAssembler at app/Services/Transcript/TranscriptAssembler.php. Reads RoleplayTranscriptTurn records ordered by sequence. Validates: sequence ordering (gaps), duplicate sequences, empty text, speaker validity (USER/AI), partial vs final status. Detects interrupted AI turns (AI PARTIAL turns not yet finalized). Computes integrity: COMPLETE (all FINAL, contiguous, valid) / PARTIAL (gaps, partials, empty text) / FAILED (no turns). Updates session.transcript_integrity via updateQuietly. Added transcriptTurns() hasMany relationship to RoleplaySession. 12 unit tests with 54 assertions cover all validation rules. All 705 tests pass (2178 assertions), npm run build passes (62 modules).
 
 ---
 

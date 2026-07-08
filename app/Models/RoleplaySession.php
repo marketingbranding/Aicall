@@ -10,6 +10,7 @@ use App\Enums\TranscriptIntegrity;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\Relations\HasOne;
 use Illuminate\Support\Str;
 
@@ -67,6 +68,11 @@ class RoleplaySession extends Model
     public function snapshot(): HasOne
     {
         return $this->hasOne(RoleplaySessionSnapshot::class, 'roleplay_session_id');
+    }
+
+    public function transcriptTurns(): HasMany
+    {
+        return $this->hasMany(RoleplayTranscriptTurn::class, 'roleplay_session_id');
     }
 
     public function scopeForUser($query, User $user): void
