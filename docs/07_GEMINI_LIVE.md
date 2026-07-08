@@ -29,6 +29,25 @@ The product requires:
 
 If the configured model does not support an optional capability, the application must disable or adapt the feature honestly.
 
+## Verified Current Gemini Live Notes
+
+Verification date: 2026-07-08, against official Google Gemini API documentation listed in `SOURCES.md`.
+
+- Current selected Live model remains `gemini-3.1-flash-live-preview`.
+- Google's model catalog also lists `gemini-2.5-flash-native-audio-preview-12-2025` for Gemini 2.5 Flash Live Preview and `gemini-3.5-live-translate-preview` for Live Translate; this product keeps the general Live roleplay model in configuration and does not hardcode model IDs in domain code.
+- Live API input modalities are raw 16-bit PCM audio at 16 kHz little-endian, image frames, and text. Audio output is raw 16-bit PCM at 24 kHz little-endian.
+- `gemini-3.1-flash-live-preview` supports native audio output, input transcription, output transcription, synchronous function calling, realtime text input via `send_realtime_input`, custom/manual VAD, automatic VAD configuration, session resumption, and context compression.
+- `gemini-3.1-flash-live-preview` does not support asynchronous function calling with `behavior: NON_BLOCKING`.
+- `gemini-3.1-flash-live-preview` does not support affective dialogue or proactive audio. Those are documented as supported on Gemini 2.5 Flash Live Preview, not Gemini 3.1 Flash Live Preview.
+- A single Gemini 3.1 server event can contain multiple content parts, for example audio and transcript; the client must inspect/process every part in every event.
+- For Gemini 3.1, `send_client_content` is only for seeding initial context history when configured; realtime text updates during the conversation must use realtime input.
+- Audio-only sessions are limited to 15 minutes without compression; audio plus video sessions are limited to 2 minutes. The product limit remains 15 minutes.
+- Live WebSocket connections are limited to around 10 minutes; the client must handle `goAway` and use official session resumption to continue the same application roleplay session.
+- Session resumption handles/tokens are valid for 2 hours after the last session termination according to the session-management guide.
+- Ephemeral tokens are created through the v1alpha auth token flow. Defaults are 1 minute to start a new Live session (`newSessionExpireTime`) and 30 minutes for messages on that connection (`expireTime`). Both can be set to less than 20 hours in the future.
+- Even with an ephemeral token whose `uses` value is 1, reconnecting every 10 minutes within `expireTime` can use session resumption with the same token.
+- Production browser direct-to-Gemini architecture should use ephemeral tokens instead of standard API keys. The permanent Gemini API key stays server-side.
+
 ## Live Model Capability Registry
 
 Create a central capability registry or resolver.
@@ -42,6 +61,7 @@ Conceptual fields:
 - `supports_async_function_calling`
 - `supports_affective_dialogue`
 - `supports_proactive_audio`
+- `supports_realtime_text_input`
 - `supports_session_resumption`
 - `supports_context_compression`
 

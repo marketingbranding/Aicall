@@ -318,7 +318,7 @@ Verification note 2026-07-07: Enforced RoleplaySessionSnapshot immutability at t
 
 ## Phase 8 — Gemini Live Vertical Voice Integration
 
-- [ ] Re-verify current official Gemini Live API and model capabilities.
+- [x] Re-verify current official Gemini Live API and model capabilities.
 - [ ] Implement `GeminiLiveRoleplayProvider` server-side provisioning service.
 - [ ] Implement ephemeral-token endpoint.
 - [ ] Verify short-lived token/config restrictions.
@@ -342,6 +342,8 @@ Verification note 2026-07-07: Enforced RoleplaySessionSnapshot immutability at t
 - [ ] Preserve same Laravel roleplay session through reconnect.
 
 ### Phase 8 Manual Verification
+
+Verification note 2026-07-08: Re-verified official Google Gemini Live docs and model pages. `gemini-3.1-flash-live-preview` remains current for Live roleplay. Updated `config/gemini.php` to disable unsupported Gemini 3.1 affective dialogue and proactive audio while preserving native audio, transcription, realtime text input, synchronous function calling, session resumption, and context compression. Documented ephemeral token defaults/limits, 10-minute connection resets, GoAway/session resumption behavior, 15-minute audio session limit, function-calling limitations, and direct browser-to-Gemini requirements in `docs/07_GEMINI_LIVE.md`.
 
 - [ ] real Indonesian voice conversation works
 - [ ] user can interrupt AI
