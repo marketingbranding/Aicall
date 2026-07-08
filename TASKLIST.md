@@ -386,7 +386,7 @@ Verification note 2026-07-08: `GeminiLiveClient` message handler now processes a
 - [x] Implement duplicate prevention.
 - [x] Implement interrupted AI turn handling.
 - [x] Implement transcript integrity status.
-- [ ] Implement idempotent transcript finalization.
+- [x] Implement idempotent transcript finalization.
 
 ### Phase 9 Tests
 
@@ -402,8 +402,18 @@ Verification note 2026-07-08: `GeminiLiveClient` message handler now processes a
 - [x] mixed partial and final transcript
 - [x] existing tests still pass
 - [x] multiple gaps detected
+- [x] owner can finalize transcript
+- [x] another user cannot finalize
+- [x] pending/suspended users cannot finalize
+- [x] repeated finalization is safe
+- [x] finalization computes COMPLETE/PARTIAL/FAILED
+- [x] transcript submission after finalization is rejected
+- [x] finalization from active is rejected
+- [x] finalization from completed is idempotent
 
-Verification note 2026-07-08: Created TranscriptAssembler at app/Services/Transcript/TranscriptAssembler.php. Reads RoleplayTranscriptTurn records ordered by sequence. Validates: sequence ordering (gaps), duplicate sequences, empty text, speaker validity (USER/AI), partial vs final status. Detects interrupted AI turns (AI PARTIAL turns not yet finalized). Computes integrity: COMPLETE (all FINAL, contiguous, valid) / PARTIAL (gaps, partials, empty text) / FAILED (no turns). Updates session.transcript_integrity via updateQuietly. Added transcriptTurns() hasMany relationship to RoleplaySession. 12 unit tests with 54 assertions cover all validation rules. All 705 tests pass (2178 assertions), npm run build passes (62 modules).
+Verification note 2026-07-08 (assembler): Created TranscriptAssembler at app/Services/Transcript/TranscriptAssembler.php. Reads RoleplayTranscriptTurn records ordered by sequence. Validates: sequence ordering (gaps), duplicate sequences, empty text, speaker validity (USER/AI), partial vs final status. Detects interrupted AI turns. Computes integrity: COMPLETE / PARTIAL / FAILED. Updates session.transcript_integrity via updateQuietly. 12 unit tests.
+
+Verification note 2026-07-08 (finalize): Created RoleplayTranscriptFinalizeController at app\Http\Controllers\RoleplayTranscriptFinalizeController.php. Route POST /training/sessions/{publicId}/transcript/finalize. Accepts ENDING (transitions to TRANSCRIPT_FINALIZING) or post-finalization states (TRANSCRIPT_FINALIZING, EVALUATING, COMPLETED, FAILED) for idempotent re-assembly. Rejects ACTIVE and earlier states. After finalization, transcript store endpoint naturally rejects because session is no longer ACTIVE/ENDING. Runs TranscriptAssembler, stores transcript_integrity. No evaluation dispatched, no AI model called. 11 feature tests with 36 assertions. All 716 tests pass (2214 assertions), npm run build passes.
 
 ---
 
